@@ -1,0 +1,48 @@
+<!DOCTYPE html> 
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, target-densitydpi=device-dpi, user-scalable=0">
+<!-- TemplateBeginEditable name="doctitle" --> 
+<title>Quote Pro Mobile powered by Copperfield</title>
+<!-- TemplateEndEditable -->
+<script src="../js/jquery-1.8.2.min.js" type="text/javascript"></script>
+
+<link href="../css/jquery.mobile-1.2.0.min.css" rel="stylesheet" type="text/css"/>
+<link href="../css/design.css" rel="stylesheet" type="text/css" />
+<link href="js/toast/resources/css/jquery.toastmessage.css" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" id="deviceSpecificCSS"/>
+
+<!-- TemplateBeginEditable name="head" -->
+<!-- TemplateEndEditable -->
+
+<script src="../js/global.js" type="text/javascript"></script>
+<script src="../js/jquery.mobile-1.2.0.min.js" type="text/javascript"></script>
+<script src="js/toast/javascript/jquery.toastmessage.js" type="text/javascript"></script>
+</head> 
+<body> 
+
+<div data-role="page">
+	<!-- TemplateBeginEditable name="pageHeader" -->
+	<div data-role="header" data-position="fixed">
+        <div id="imgQuoteProLogo">
+        </div>
+	</div>
+	<!-- TemplateEndEditable -->
+	<div data-role="content">
+    <!-- TemplateBeginEditable name="content" -->
+		<ul data-role="listview">
+			<li><a href="../page2.html">Page Two</a></li>
+            <li><a href="#page3">Page Three</a></li>
+			<li><a href="#page4">Page Four</a></li>
+		</ul>
+    <!-- TemplateEndEditable -->	    		
+	</div>
+	<div data-role="footer" data-position="fixed">
+        <div id="imgCopperfieldLogo">
+        </div>
+	</div>
+</div>
+
+</body>
+</html>
