@@ -14,7 +14,7 @@ function buildStudentPage(element){
 				newDiv.attr("id", "customPage"+(uniqueId++)); 
 				
 				var stylesheet = $(document.createElement('link'));
-				stylesheet.attr("href", "customStudentPage.css");
+				stylesheet.attr("href", "css/customStudentPage.css");
 				stylesheet.attr("rel", "stylesheet");
 				stylesheet.attr("type", "text/css");
 				
