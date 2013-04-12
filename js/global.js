@@ -80,6 +80,14 @@ function initDB(){
 				}
 }
 
+function getListOfStudents(){
+var toRet = [];
+for(var i=0; i<25; i++){
+			toRet.push({name: "example student "+i, period: parseInt(Math.random()*7)+1, curlups: 30, desired: {curlups: 35}}); 	
+} 	return toRet; 
+	
+	}
+
 
 
 

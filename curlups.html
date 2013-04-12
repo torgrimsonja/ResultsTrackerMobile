@@ -1,0 +1,43 @@
+<div data-role="page" id="curlups-main">
+
+<script> 
+
+function linkTo(toLink){ 
+				$.mobile.changePage(toLink+".html"); 
+}
+
+var students = getListOfStudents();
+
+for(var i=0; i<students.length; i++){
+				var student = document.createElement("li");
+				var $student = $(student);
+				
+				var h2 = document.createElement("h2"); 
+				var $h2 = $(h2);
+				$h2.text(students[i].name);
+				$student.append($h2);
+				
+				var span = document.createElement("span");
+				var $span = $(span);
+				$span.css("float","right");
+				$span.text("Highest: "+students[i].curlups+" Desired: "+students[i].desired.curlups);
+				$student.append($span); 
+			
+				$student.attr("id",students[i].name);
+				$('#toFill').append($student);
+}
+
+</script>
+
+<!--<style rel="stylesheet" href="css/curlups.css" type="text/css" />-->
+
+	<div data-role="content">
+				<div data-rol="listview" id="curlList">
+								<ul id="toFill"></ul>
+				
+				</div>
+ 
+	</div>
+	<div data-role="footer" data-position="fixed"> </div>
+</div>
+
