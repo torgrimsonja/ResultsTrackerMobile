@@ -15,7 +15,7 @@
 <script> 
 
 function testChange(){
-				$.mobile.changePage("listTest.html"); 
+				$.mobile.changePage("listTest.html", {reverse: false}); 
 }
 
 </script>
@@ -23,7 +23,6 @@ function testChange(){
 <body> 
 
 <div data-role="page" id="def">
-	<script src="js/index.js" type="text/javascript"></script>
 	<div data-role="content">
     
     <h3>Disclaimer</h3>
@@ -38,6 +37,7 @@ function testChange(){
 <div data-role="page" id="testPage"> 
 				success
 </div>
+
 
 </body>
 </html>

@@ -69,7 +69,6 @@ function detectDevice(){
 
 $(document).on('pageinit', function() {	
 	//Wait for PhoneGap to load
-	console.log("In global js ready function...Calling Detect Device");
 	document.addEventListener("deviceready", detectDevice(), false);
 });
 
