@@ -4,36 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <title></title>
-<script src="js/jquery-1.9.1.js" type="text/javascript"></script>
+
 <link href="css/jquery.mobile-1.3.1.min.css" rel="stylesheet" type="text/css"/>
 <link href="js/toast/resources/css/jquery.toastmessage.css" rel="stylesheet" type="text/css" />
-<link rel="stylesheet" type="text/css" id="deviceSpecificCSS"/>
+
+<script src="js/jquery-1.9.1.js" type="text/javascript"></script>
+<script src="js/jquery.mobile-1.3.1.min.js" type="text/javascript"></script>
 
 <script src="js/global.js" type="text/javascript"></script>
-<script src="js/jquery.mobile-1.3.1.min.js" type="text/javascript"></script>
+
 <script src="js/toast/javascript/jquery.toastmessage.js" type="text/javascript"></script>
-<script> 
-
-function testChange(){
-				$.mobile.changePage("curlups.html"); 
-}
-
-function goals(){
-				$.mobile.changePage("createGoal.html"); 
-}
-
-</script>
 </head> 
 <body> 
-
-<div data-role="page" id="def">
-	<div data-role="content">
-    
-    <h3>Disclaimer</h3>
-    <p>This is where we will display the disclaimer for the app...all the install happens here also.</p>
+<script src="js/index.js" type="text/javascript"></script>
+<div data-role="page" id="index-landing">
+	<div data-role="header" style="height: 50px;"> 
+		<a href="index.html" data-role="button" data-transition="flip">&larr;</a>
+	</div> 
+	<div data-role="content" id="index-landing-content">
 	
-   	<input type="button" value="click here" onclick="testChange()" width="100" height="50" /> 
-			<input type="button" value="Goals" onclick="goals()" width="100" height="50" />
+	<!-- Assumed Authentication --> 
+	<div id="courses"> 
+		
+	</div>
+	
+	
 	</div>
 	<div data-role="footer" data-position="fixed">
 	</div>

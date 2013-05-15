@@ -1,6 +1,9 @@
 //JavaScript Document
 
 var DB_SIZE = 1000000;
+var REMOTE_PATH = 'http://killit.atsolinc.com/'; 
+var DATA_THEME = 'c';
+var c = 299792458; // m/s
 
 //Global initialization functions here
 $(document).bind("mobileinit", function(){
@@ -73,21 +76,9 @@ $(document).on('pageinit', function() {
 	document.addEventListener("deviceready", detectDevice(), false);
 });
 
-var openDb;
-function initDB(){ 
-				if(openDb) return openDb; else { openDb = window.openDatabase("resultsTracked", "1.0", "Results Tracked", DB_SIZE);
-								//ajax it up
-				}
-}
-
-function getListOfStudents(){
-var toRet = [];
-for(var i=0; i<25; i++){
-			toRet.push({name: "example student "+i, period: parseInt(Math.random()*7)+1, curlups: 30, desired: {curlups: 35}}); 	
-} 	return toRet; 
+function generateHeader(){
 	
-	}
-
+}
 
 
 
