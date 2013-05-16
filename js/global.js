@@ -76,8 +76,15 @@ $(document).on('pageinit', function() {
 	document.addEventListener("deviceready", detectDevice(), false);
 });
 
-function generateHeader(){
-	
+function genericAjax(callback, data, path){
+	$.ajax({
+		url: REMOTE_PATH+path, 
+		success: function(data, status, jqXHR){
+			callback(jqXHR.responseText); 
+		},
+		type: 'POST',
+		data: data
+	});	
 }
 
 
