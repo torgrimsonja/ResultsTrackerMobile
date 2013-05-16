@@ -87,6 +87,9 @@ function genericAjax(callback, data, path){
 	});	
 }
 
+var db = new resultsDatabase(); 
+db.initDb();
+
 
 
 
