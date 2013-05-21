@@ -8,9 +8,8 @@ function listCourses(){
 	genericAjax(asyncListCourses, 'requested=coursename', 'admin/mobileAjaxGate.php'); 
 }
 
-
-function asyncListCourses(response){
-	response = $.parseJSON(response);
+function asyncListCourses(response, type){
+	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 
 		var i=-1;
 		while(response[++i] != undefined){

@@ -5,6 +5,9 @@ var REMOTE_PATH = 'http://killit.atsolinc.com/';
 var DATA_THEME = 'c';
 var c = 299792458; // m/s
 
+var db = new resultsDatabase(); 
+db.initDb(DB_SIZE);
+
 //Global initialization functions here
 $(document).bind("mobileinit", function(){
 	$.mobile.loader.prototype.options.text = "Loading...";
@@ -77,18 +80,19 @@ $(document).on('pageinit', function() {
 });
 
 function genericAjax(callback, data, path){
-	$.ajax({
-		url: REMOTE_PATH+path, 
-		success: function(data, status, jqXHR){
-			callback(jqXHR.responseText); 
-		},
-		type: 'POST',
-		data: data
-	});	
+	if(db.complete){ 
+		db.localQuery(data, callback); 
+	} else { setTimeout(function(){ db.localQuery(data, callback); }, 500); }
+		/*$.ajax({
+			url: REMOTE_PATH+path, 
+			success: function(data, status, jqXHR){
+				callback(jqXHR.responseText, 'internet');  
+			},
+			type: 'POST',
+			data: data
+		});	*/
 }
 
-var db = new resultsDatabase(); 
-db.initDb();
 
 
 
