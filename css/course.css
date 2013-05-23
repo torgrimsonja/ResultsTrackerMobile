@@ -6,3 +6,17 @@
 #sTable , #sTable td, #sTable th{
 	border: thin solid black;
 }
+.emptyCell, .cell, .taskHeader, .rowHeader, #bufferBox {
+	background-color: white;
+}
+
+.emptyCell, .cell, .taskHeader {
+	width: 75px;
+	min-width: 75px;
+	max-width: 75px;
+	overflow: hidden;
+}
+
+#students {
+	overflow: scroll; 
+}

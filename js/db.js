@@ -71,7 +71,6 @@ resultsDatabase.prototype.syncResponse = function(response){
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
 		}
 		
-		console.log(response);
 		this.query("CREATE TABLE IF NOT EXISTS `course_student_task_attempt` (`id`, `course_student_id`, `task_id`, `value`, `timestamp`)", callback);
 		for(var i=0; i<response.course_student_task_attempt.length; i++){
 			this.query("INSERT INTO `course_student_task_attempt`(`id`, `course_student_id`, `task_id`, `value`, `timestamp`) VALUES ('"+response.course_student_task_attempt[i].id+"', '"+response.course_student_task_attempt[i].course_student_id+
@@ -152,20 +151,20 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 					var toReturn = persist.getValue(); //We'll be using the names and ids filled above, but we have to get them from a persistant variable because scope is weird 
 					if (response.rows && response.rows.length) {
 						for(var j=0; j<response.rows.length; j++){
-							var taskName = new persistantVariable();
+							var persistTaskData = new persistantVariable();
 							responseRow.pushValue({value: response.rows.item(j), used: false}); //You'll see why I use the "used: false" later on. Suffice it to say more variable scope issues
-							ref.query("SELECT `name` FROM `task` WHERE `id` = '"+response.rows.item(j).task_id+"'", function(response, callback){  
+							ref.query("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+response.rows.item(j).task_id+"'", function(response, callback){  
 								if (response.rows && response.rows.length) {
 									var tempArray = [];
 									for(var k=0; k<response.rows.length; k++){
 										tempArray.push(response.rows.item(k));
 									}
-									taskName.setValue(tempArray);
+									persistTaskData.setValue(tempArray);
 								}
 								
 							});
 							setTimeout(function(){ // Give all these async queries time to complete 
-								var task_name = taskName.getValue(); //pull in all this persistant data
+								var task_data = persistTaskData.getValue(); //pull in all this persistant data 
 								var rows = responseRow.getValue();
 								var student_id_persist = student_id.getValue();
 								var thisId, thisRow, thisTaskId;
@@ -186,7 +185,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 										break;
 									} else index++;
 								} // format the data like the webpage is expecting
-								toReturn.push({task_id: thisTaskId, value: thisRow, student_id: thisId, task_name: task_name[0].name});
+								toReturn.push({task_id: thisTaskId, value: thisRow, student_id: thisId, task_name: task_data[0].name, operator: task_data[0].operator, task_value: task_data[0].value});
 							}, 50);
 						} 
 					} 
