@@ -4,11 +4,14 @@ else {examineStudent(false);}
 
 
 function examineStudent(response){
-	if(type == 'internet') response = $.parseJSON(response);
 	if(response){
 		console.log(response);
 	} else {
-		genericAjax(examineStudent, "requested=examineStudent&studentId="+studentToLoad+"&courseId="+courseToLoad, 'admin/mobileAjaxGate.php');
+		//genericAjax(examineStudent, "requested=examineStudent&studentId="+studentToLoad+"&courseId="+courseToLoad, 'admin/mobileAjaxGate.php');
+		var qs = new queryStack(db); 
+		qs.addQuery("SELECT * FROM `task_type`", 'tasks'); 
+		qs.addQuery("SELECT * FROM `student`", 'students'); 
+		qs.triggerStack();
 	}
 
 }

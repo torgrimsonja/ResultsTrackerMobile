@@ -83,14 +83,14 @@ function genericAjax(callback, data, path){
 	if(db.complete){ 
 		db.localQuery(data, callback); 
 	} else { setTimeout(function(){ db.localQuery(data, callback); }, 500); }
-		/*$.ajax({
+		/* $.ajax({
 			url: REMOTE_PATH+path, 
 			success: function(data, status, jqXHR){
 				callback(jqXHR.responseText, 'internet');  
 			},
 			type: 'POST',
 			data: data
-		});	*/
+		});	 */
 }
 
 

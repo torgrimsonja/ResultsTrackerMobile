@@ -92,9 +92,9 @@ resultsDatabase.prototype.syncResponse = function(response){
 resultsDatabase.prototype.query = function(q, callback){
 	resultsDatabase.db.transaction(function (tx) {
 		tx.executeSql(q, [], function(tx, results){
-			callback(results); 
+			if(callback.callback != undefined) callback.callback(results, callback.context, callback.identifier, callback.onFinish); 
+			else callback(results);
 		});
-	
 	});
 }
 
@@ -110,112 +110,67 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	//There are a ton of variable scope issues in calling asychronous queries, so hang tight
 	var call = callback; //I use the name "callback" elsewhere
 	var ref = this; //I keep this reference around to use prototype methods deeper in
+	var qs = new queryStack(this);
 	if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
-		this.query("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", function(response, callback){
-			var toReturn = [];
-			if (response.rows && response.rows.length) {
-				toReturn['error'] = false;
-				for(var i=0; i<response.rows.length; i++){
-					toReturn.push(response.rows.item(i));
-				} 
-			} else toReturn['error'] = true; 
-			call(toReturn, 'local'); //'local' being legacy code ensuring the callback function that this result comes from the local db
-		});
+		qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", "name");
+		qs.triggerStack(function(data){
+			call(data, 'local'); 
+		}); 
 	}
-		
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
-		//persistantVariables are simple javascript objects that can be referenced asychronously, for storing data inside of db calls 
-		var persist = new persistantVariable();  var responseRow = new persistantVariable(); var student_id = new persistantVariable();
-		var keyvalue = this.getArgs(data); //returns an array of key => value pairs in the data string, not counting requested=*
-		this.query("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[1].value+"'", function(response, callback){ //first we'll need the student_ids and course_student_ids from each student in the course
-			var studentIds = [];
-			if (response.rows && response.rows.length) {
-				for(var i=0; i<response.rows.length; i++){
-					studentIds.push(response.rows.item(i));
-				} 
+		var keyvalue = this.getArgs(data); 
+		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		qs.triggerStack(function(data){
+			for(var i=0; i<data.course_student.length; i++){
+				qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
+				qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 			}
-			var toReturn = [];
-			for(var i=0; i<studentIds.length; i++){ //Now, for every student in a particular course:
-				student_id.pushValue({id: studentIds[i].student_id, used: false}); //save the id to be called on asychronously 
-				ref.query("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+studentIds[i].student_id+"'", function(response, callback){ //BEGIN ASYNC 
-					if (response.rows && response.rows.length) { //Here we return the names and ids of each student in a particular course 
-						toReturn['error'] = false;
-						for(var j=0; j<response.rows.length; j++){
-							toReturn.push(response.rows.item(j));
-						} 
-					} else toReturn['error'] = true; 
-					
-					persist.setValue(toReturn); //save the result of the call 
+			qs.triggerStack(function(data){
+				for(var i=0; i<data.course_student_task_attempt.length; i++){
+					qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"'", "task"); 
+				}
+				qs.triggerStack(function(data){
+					call(data, 'local'); 
 				});
-				ref.query("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+studentIds[i].id+"'", function(response, callback){ // Now we'll want the task_id and value of each student's task attempts
-					var toReturn = persist.getValue(); //We'll be using the names and ids filled above, but we have to get them from a persistant variable because scope is weird 
-					if (response.rows && response.rows.length) {
-						for(var j=0; j<response.rows.length; j++){
-							var persistTaskData = new persistantVariable();
-							responseRow.pushValue({value: response.rows.item(j), used: false}); //You'll see why I use the "used: false" later on. Suffice it to say more variable scope issues
-							ref.query("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+response.rows.item(j).task_id+"'", function(response, callback){  
-								if (response.rows && response.rows.length) {
-									var tempArray = [];
-									for(var k=0; k<response.rows.length; k++){
-										tempArray.push(response.rows.item(k));
-									}
-									persistTaskData.setValue(tempArray);
-								}
-								
-							});
-							setTimeout(function(){ // Give all these async queries time to complete 
-								var task_data = persistTaskData.getValue(); //pull in all this persistant data 
-								var rows = responseRow.getValue();
-								var student_id_persist = student_id.getValue();
-								var thisId, thisRow, thisTaskId;
-								var index = 0;
-								while(true){ // loop through the persistant data, as an extension of a for loop far above this scope level whose index variable cannot be referenced due to scope problems 
-									if(student_id_persist[index].used == false){
-										student_id_persist[index].used = true;
-										thisId = student_id_persist[index].id;
-										break;
-									} else index++;
-								} 
-								index = 0;
-								while(true){ // do it again
-									if(rows[index].used == false){
-										rows[index].used = true;
-										thisRow = rows[index].value.value; // <-- the mark of a pro, descriptive index names
-										thisTaskId = rows[index].value.task_id;
-										break;
-									} else index++;
-								} // format the data like the webpage is expecting
-								toReturn.push({task_id: thisTaskId, value: thisRow, student_id: thisId, task_name: task_data[0].name, operator: task_data[0].operator, task_value: task_data[0].value});
-							}, 50);
-						} 
-					} 
-					persist.setValue(toReturn); //save all the data for the next iteration of the loop
-				});
-			}
-			setTimeout(function(){ //lots of async functions, so we'll wait a bit
-				var toReturn = persist.getValue();
-				call(toReturn, 'local');
-			}, 250);
+			});
 		});
+		
 	} else if(data == "requested=tasknames"){
-		this.query("SELECT DISTINCT `name` FROM `task`", function(response, callback){
-			var toReturn = [];
-			if (response.rows && response.rows.length) {
-				toReturn['error'] = false;
-				for(var i=0; i<response.rows.length; i++){
-					toReturn.push(response.rows.item(i));
-				} 
-			} else toReturn['error'] = true; 
-			call(toReturn, 'local');
+		qs.addQuery("SELECT DISTINCT `name` FROM `task`", "taskname");
+		qs.triggerStack(function(data) {
+			call(qs.data, 'local');
 		});
 	}
 	
+	else if(data.search("requested=examineStudent") > -1){
+		/* var keyvalue = this.getArgs(data);
+		var toReturn = new persistantVariable();
+		this.query("SELECT DISTINCT `course_id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", function(response, callback){
+			if (response.rows && response.rows.length) {
+				for(var i=0; i<response.rows.length; i++){
+					toReturn.pushValue(response.rows.item(i));
+				} 
+			} else toReturn.error = true; 
+		});
+		
+		var course_ids = toReturn.getValue();
+		for(var i=0; i<course_ids.length; i++){
+			this.query("SELECT `name` FROM `course` WHERE `id` ='"+course_ids[i].course_id+"'", function(response, callback){
+				if (response.rows && response.rows.length) {
+					for(var j=0; j<response.rows.length; j++){
+						toReturn.pushValue(response.rows.item(i));
+					} 
+				} else toReturn.error = true; 
+			});
+		} */
+		
+	}
 }
 
 resultsDatabase.prototype.getArgs = function(data){
 	var pairs = data.split("&"); 
 	var keyvalue = [];
-	for(var i=0; i<pairs.length; i++){
+	for(var i=1; i<pairs.length; i++){
 		var splitValues = pairs[i].split("=");
 		keyvalue.push({key: splitValues[0], value: splitValues[1]});
 	}
@@ -241,6 +196,7 @@ function callback(response){
 
 var persistantVariable = function(){
 	this.value = [];
+	this.error = false; 
 }
 
 persistantVariable.prototype.setValue = function(newVal){
@@ -253,4 +209,47 @@ persistantVariable.prototype.getValue = function(){
 
 persistantVariable.prototype.pushValue = function(toPush){
 	this.value.push(toPush);
+}
+
+var queryStack = function(db){
+	this.stack = []; 
+	this.db = db; 
+	this.data = [];
+	this.data["error"] = false; 
+	this.reportingIn = 0; 
+	this.lastResultCount = 0; 
+}
+
+queryStack.prototype.addQuery = function(query, identifier){
+	this.stack.push({q: query, identifier: identifier}); 
+}
+
+queryStack.prototype.triggerStack = function(onFinish){
+	this.nextQuery(0, onFinish); 
+}
+
+queryStack.prototype.nextQuery = function(index, onFinish){
+	if(this.stack[index] != undefined){
+		this.db.query(this.stack[index].q, {callback: qCallback, context: this, identifier: this.stack[index].identifier, onFinish: onFinish});
+		this.nextQuery(index+1, onFinish); 
+	} 
+}
+
+queryStack.prototype.hasNewResults = function(){
+	if(this.data.length > this.lastResultCount){
+		this.lastResultCount = this.data.length; 
+		return true; 
+	} else return false; 
+}
+
+function qCallback(response, context, identifier, onFinish){
+	if (response.rows && response.rows.length) {
+		if(context.data[identifier] == undefined) context.data[identifier] = []; 
+		for(var i=0; i<response.rows.length; i++){
+			context.data[identifier].push(response.rows.item(i));
+		}
+	}
+	
+	context.reportingIn++; 
+	if(context.reportingIn == context.stack.length){ context.stack = []; onFinish(context.data); context.reportingIn = 0;}
 }
