@@ -1,0 +1,5 @@
+Make the table in course.html not look terrible
+Make sure course.html table fills properly in every case
+Design student detail page
+Allow addition of new courses and students
+Page for task attempts

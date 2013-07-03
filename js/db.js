@@ -107,7 +107,6 @@ resultsDatabase.prototype.dumpDbInConsole = function(){
 }
 
 resultsDatabase.prototype.localQuery = function(data, callback){
-	//There are a ton of variable scope issues in calling asychronous queries, so hang tight
 	var call = callback; //I use the name "callback" elsewhere
 	var ref = this; //I keep this reference around to use prototype methods deeper in
 	var qs = new queryStack(this);
@@ -126,9 +125,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 				qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 			}
 			qs.triggerStack(function(data){
-				for(var i=0; i<data.course_student_task_attempt.length; i++){
-					qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"'", "task"); 
-				}
+				if(data.course_student_task_attempt != undefined){
+					for(var i=0; i<data.course_student_task_attempt.length; i++){
+						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"'", "task"); 
+					}
+				} 
 				qs.triggerStack(function(data){
 					call(data, 'local'); 
 				});
@@ -186,23 +187,6 @@ function callback(response){
 	}
 }
 
-var persistantVariable = function(){
-	this.value = [];
-	this.error = false; 
-}
-
-persistantVariable.prototype.setValue = function(newVal){
-	this.value = newVal;
-}
-
-persistantVariable.prototype.getValue = function(){
-	return this.value; 
-}
-
-persistantVariable.prototype.pushValue = function(toPush){
-	this.value.push(toPush);
-}
-
 var queryStack = function(db){
 	this.stack = []; 
 	this.db = db; 
@@ -224,7 +208,8 @@ queryStack.prototype.nextQuery = function(index, onFinish){
 	if(this.stack[index] != undefined){
 		this.db.query(this.stack[index].q, {callback: qCallback, context: this, identifier: this.stack[index].identifier, onFinish: onFinish});
 		this.nextQuery(index+1, onFinish); 
-	} 
+	}
+	try{ if(this.stack == undefined || !(this.stack.length>0)) onFinish(this.data); } catch(e){} //this is used when a querystack is triggered with no queries
 }
 
 queryStack.prototype.hasNewResults = function(){

@@ -59,15 +59,16 @@ function createStudentView(response, type){
 						$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
 					}
 				});
-			}
+			} console.log
 			setTimeout(function(){
+				console.log('timed');
 				var maxWidth = Number.NEGATIVE_INFINITY;
 				$('.rowHeader').each(function(){
 					maxWidth = Math.max(maxWidth, $(this).width());
-					$('#bufferBox').width(maxWidth).css("min-width", maxWidth);
-					$('.rowHeader').css("max-width", maxWidth).css("min-width", maxWidth).css("z-index", "1");
 				}); 
-				
+				console.log(maxWidth);
+				$('#bufferBox').width(maxWidth).css("min-width", maxWidth);
+				$('.rowHeader').css("max-width", maxWidth).css("min-width", maxWidth).css("z-index", "1");
 				
 				var clones = [];
 				$('.rowHeader').each(function(){
