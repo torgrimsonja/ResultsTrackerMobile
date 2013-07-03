@@ -143,26 +143,18 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	}
 	
 	else if(data.search("requested=examineStudent") > -1){
-		/* var keyvalue = this.getArgs(data);
-		var toReturn = new persistantVariable();
-		this.query("SELECT DISTINCT `course_id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", function(response, callback){
-			if (response.rows && response.rows.length) {
-				for(var i=0; i<response.rows.length; i++){
-					toReturn.pushValue(response.rows.item(i));
-				} 
-			} else toReturn.error = true; 
+		var keyvalue = this.getArgs(data); 
+		qs.addQuery("SELECT DISTINCT `course_id`, `id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
+		qs.triggerStack(function(data){
+			for(var i=0; i<data.course_student.length; i++){
+				qs.addQuery("SELECT `name` FROM `course` WHERE `id` ='"+data.course_student[i].course_id+"'", "course");
+				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].id+"'", "course_student_task_attempt");
+			}
+			qs.triggerStack(function(data){
+				call(data, 'local');
+			});
 		});
 		
-		var course_ids = toReturn.getValue();
-		for(var i=0; i<course_ids.length; i++){
-			this.query("SELECT `name` FROM `course` WHERE `id` ='"+course_ids[i].course_id+"'", function(response, callback){
-				if (response.rows && response.rows.length) {
-					for(var j=0; j<response.rows.length; j++){
-						toReturn.pushValue(response.rows.item(i));
-					} 
-				} else toReturn.error = true; 
-			});
-		} */
 		
 	}
 }
