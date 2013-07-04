@@ -1,5 +1,9 @@
 $(function(){
-	listCourses();
+	$('#index-landing').bind("pageshow", function(){
+		if(!user.authed) $.mobile.changePage('login.html');
+		if($('#index-header p').length == 0) $('#index-header').append($('<p>Logged in as '+user.username+'</p>'));
+	});
+	if(!user.authed) $.mobile.changePage('login.html');
 });
 
 var courseToLoad; 
@@ -28,14 +32,3 @@ function asyncListCourses(response, type){
 		}
 	}
 }
-
-
-$.ajax({
-	url: 'nathanHasn\'tToldMeYet',
-	success: function(data, status, jqXHR){
-		console.log(jqXHR.responseText); 
-	},
-	type: 'POST',
-	data: 'username=t&password='+hex_sha1('fish')
-});
-

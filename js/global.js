@@ -1,12 +1,14 @@
 //JavaScript Document
 
-var DB_SIZE = 1000000;
-var REMOTE_PATH = 'http://killit.atsolinc.com/'; 
-var DATA_THEME = 'c';
-var c = 299792458; // m/s
+var DB_SIZE = 1000000,
+REMOTE_PATH = 'http://killit.atsolinc.com/',
+DATA_THEME = 'c',
+c = 299792458, // m/s
+user = {authed: false, username: null, passHash: null}; 
 
 var db = new resultsDatabase(); 
 db.initDb(DB_SIZE);
+
 //Global initialization functions here
 $(document).bind("mobileinit", function(){
 	$.mobile.loader.prototype.options.text = "Loading...";
