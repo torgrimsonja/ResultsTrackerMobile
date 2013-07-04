@@ -44,31 +44,32 @@ function createStudentView(response, type){
 				studentToLoad = $(e.delegateTarget).attr("data-studId");
 				$.mobile.changePage("student.html");
 			});
-			var columnOfInterest;
-			for(var i=0; i<response.course_student_task_attempt.length; i++){
-				var thisAttempt = response.course_student_task_attempt[i]; 
-				var thisTask = response.task[i]; 
-				$('.taskHeader').each(function(){
-					var name = $(this).text();
-					if(thisTask.name == name){
-						columnOfInterest = $(this).attr("data-columnNum");
-					}
-				});
-				$('.emptyCell').each(function(){
-					if($(this).attr("data-columnNum") == columnOfInterest && $($(this).parents().get(0)).attr("data-studid") == thisAttempt.course_student_id){
-						$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
-					}
-				});
-			} console.log
+			var columnOfInterest;  
+			if(response.course_student_task_attempt != undefined){
+				for(var i=0; i<response.course_student_task_attempt.length; i++){
+					var thisAttempt = response.course_student_task_attempt[i]; 
+					var thisTask = response.task[i]; 
+					$('.taskHeader').each(function(){
+						var name = $(this).text();
+						if(thisTask.name == name){
+							columnOfInterest = $(this).attr("data-columnNum");
+						}
+					});
+					$('.emptyCell').each(function(){
+						if($(this).attr("data-columnNum") == columnOfInterest && $($(this).parents().get(0)).attr("data-studid") == thisAttempt.course_student_id){
+							$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
+						}
+					});
+				} 
+			}
 			setTimeout(function(){
-				console.log('timed');
 				var maxWidth = Number.NEGATIVE_INFINITY;
 				$('.rowHeader').each(function(){
 					maxWidth = Math.max(maxWidth, $(this).width());
+					$('#bufferBox').width(maxWidth).css("min-width", maxWidth);
+					$('.rowHeader').css("max-width", maxWidth).css("min-width", maxWidth).css("z-index", "1");
 				}); 
-				console.log(maxWidth);
-				$('#bufferBox').width(maxWidth).css("min-width", maxWidth);
-				$('.rowHeader').css("max-width", maxWidth).css("min-width", maxWidth).css("z-index", "1");
+				
 				
 				var clones = [];
 				$('.rowHeader').each(function(){
@@ -88,7 +89,7 @@ function createStudentView(response, type){
 						toggled = true; 
 					}
 				});
-			}, 100);
+			}, 150);
 		}
 	} else {
 		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 

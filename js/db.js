@@ -120,9 +120,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		var keyvalue = this.getArgs(data); 
 		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
-			for(var i=0; i<data.course_student.length; i++){
-				qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
-				qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
+			if(data.course_student != undefined){
+				for(var i=0; i<data.course_student.length; i++){
+					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
+					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
+				}
 			}
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){

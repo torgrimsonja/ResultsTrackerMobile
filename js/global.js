@@ -7,7 +7,6 @@ var c = 299792458; // m/s
 
 var db = new resultsDatabase(); 
 db.initDb(DB_SIZE);
-
 //Global initialization functions here
 $(document).bind("mobileinit", function(){
 	$.mobile.loader.prototype.options.text = "Loading...";

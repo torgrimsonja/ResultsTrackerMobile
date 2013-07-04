@@ -30,3 +30,12 @@ function asyncListCourses(response, type){
 }
 
 
+$.ajax({
+	url: 'nathanHasn\'tToldMeYet',
+	success: function(data, status, jqXHR){
+		console.log(jqXHR.responseText); 
+	},
+	type: 'POST',
+	data: 'username=t&password='+hex_sha1('fish')
+});
+
