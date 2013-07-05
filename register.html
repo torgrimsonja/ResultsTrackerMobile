@@ -1,0 +1,16 @@
+<div data-role="page" id="register"> 
+	<div data-role="header"> 
+		<h2>Register A New Account</h2>
+	</div>
+	<div data-role="content">
+		<p>Note: Only one account per unique device is allowed.</p>
+		<div id="pseudoRegForm"> 
+			<input type="text" placeholder="username (3-16 characters)" id="regUsername"/> <p id="regUsernameError"></p> 
+			<input type="password" placeholder="password (6-32 characters)" id="regPass1"/> <p id="regPasswordError"></p>
+			<input type="password" placeholder="retype password" id="regPass2"/>
+			<input type="text" placeholder="email address" id="regEmail"/> <p id="regEmailError"></p>
+			<input type="button" value="submit" onclick="reg()" /> <p id="regGeneralError"></p>
+		</div>
+		<a href="#forgot" data-rel="dialog" style="text-decoration: none;"><input type="button" value="Forgotten Password"/></a>
+	</div>
+</div>

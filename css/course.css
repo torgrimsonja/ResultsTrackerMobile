@@ -11,10 +11,9 @@
 }
 
 .emptyCell, .cell, .taskHeader {
-	width: 75px;
-	min-width: 75px;
-	max-width: 75px;
-	overflow: hidden;
+	overflow: hidden; 
+	vertical-align: middle; 
+	text-align: center;
 }
 
 #students {

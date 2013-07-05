@@ -14,10 +14,10 @@ function initializeTable(response){
 	if(response){
 		if(!response.error){
 			var i=-1;
-			var tableHeadStr = '<table id="studentTable" data-role="table" data-mode="columnToggle" class="ui-responsive table-stroke"><thead><tr>';
+			var tableHeadStr = '<table id="studentTable" data-role="table" data-mode="columntoggle" class="ui-responsive table-stroke"><thead><tr>';
 				tableHeadStr += '<th class="bufferBox"></th>';
 			for(var i=0; i<response.taskname.length; i++){
-				tableHeadStr += '<th class="taskHeader" data-columnNum="'+i+'">'+response.taskname[i].name+'</th>';
+				tableHeadStr += '<th class="taskHeader" data-columnNum="'+i+'" data-priority="'+(i+1)+'">'+response.taskname[i].name+'</th>';
 				taskCount++;
 			}
 			tableHeadStr += '</tr></thead>';
@@ -51,7 +51,7 @@ function createStudentView(response, type){
 				toAppend += '</tr>';
 			}
 			$('#studentTable').append($(toAppend));
-			$('#students').trigger("create"); 
+			
 			$('.students').on("click", function(e){
 				studentToLoad = $(e.delegateTarget).attr("data-studId");
 				$.mobile.changePage("student.html");
@@ -74,35 +74,9 @@ function createStudentView(response, type){
 					});
 				} 
 			}
-			/*setTimeout(function(){
-				var maxWidth = Number.NEGATIVE_INFINITY;
-				$('.rowHeader').each(function(){
-					maxWidth = Math.max(maxWidth, $(this).width());
-					$('#bufferBox').width(maxWidth).css("min-width", maxWidth);
-					$('.rowHeader').css("max-width", maxWidth).css("min-width", maxWidth).css("z-index", "1");
-				}); 
-				
-				
-				var clones = [];
-				$('.rowHeader').each(function(){
-					clones.push({element: $(this).clone(), position: $(this).position(), height: $(this).height()});
-					$(this).attr("class", $(this).attr("class") + ' original');
-				});
-				for(var i=0; i<clones.length; i++){
-					var clone = $(clones[i].element);
-					clone.css("position", "absolute").css("left", clones[i].position.left).css("top", clones[i].position.top).css("min-height", clones[i].height).css("z-index", "0").css("visibility", "hidden").attr("class", clone.attr("class") + ' clone');
-					$('#sTable').append(clone);
-				}
-				var toggled = false;
-				$('#students').scroll(function(){
-					if(!toggled){
-						$('.original').css("visibility", "hidden"); 
-						$('.clone').css("visibility", "visible"); 
-						toggled = true; 
-					}
-				});
-			}, 150);*/
-			}  
+			$('#students').trigger("create"); 
+		}  
+		
 	} else {
 		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 
 	}
