@@ -1,4 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: db.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
 
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: db.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>
 /**
  * An object representing the local sqllite database, complete with various functions to interact with it. 
  */
@@ -67,41 +94,41 @@ resultsDatabase.prototype.syncResponse = function(response){
 	response = $.parseJSON(response);
 	if(!response.error){ //TODO: pull table structure from server
 		this.query("CREATE TABLE IF NOT EXISTS `course`(`id` , `user_id`, `name`, `active`, `timestamp`)", callback);
-		for(var i=0; i<response.course.length; i++){
+		for(var i=0; i&lt;response.course.length; i++){
 			this.query("INSERT INTO `course`(`id`,`name`,`active`,`timestamp`, `user_id`) VALUES ('"+response.course[i].id+"', '"+response.course[i].name+"', '"+response.course[i].active+"', '"+response.course[i].timestamp+"', '"+response.course[i].user_id+
 			"')", callback);// WHERE NOT EXISTS (SELECT * FROM `course` WHERE `name` = '"+response.course[i].name+"')", callback);
 		}
 		
 		this.query("CREATE TABLE IF NOT EXISTS `course_student` ( `id` , `student_id`, `course_id`, `timestamp`)", callback);
-		for(var i=0; i<response.course_student.length; i++){
+		for(var i=0; i&lt;response.course_student.length; i++){
 			this.query("INSERT INTO `course_student` (`id` , `student_id`, `course_id`, `timestamp`) VALUES ('"+response.course_student[i].id+"', '"+response.course_student[i].student_id+
 			"', '"+response.course_student[i].course_id+"', '"+response.course_student[i].timestamp+
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `course_student` WHERE `id` = '"+response.course_student[i].id+"')", callback);
 		}
 		
 		this.query("CREATE TABLE IF NOT EXISTS `student` (`id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`)", callback);
-		for(var i=0; i<response.student.length; i++){
+		for(var i=0; i&lt;response.student.length; i++){
 			this.query("INSERT INTO `student`( `id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`) VALUES ('"+response.student[i].id+"', '"+response.student[i].firstName+
 			"', '"+response.student[i].lastName+"', '"+response.student[i].gender+"', '"+response.student[i].dateOfBirth+"', '"+response.student[i].code+
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `student` WHERE `id` = '"+response.student[i].id+"')", callback);
 		}
 		
 		this.query("CREATE TABLE IF NOT EXISTS `task` (`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`)", callback);
-		for(var i=0; i<response.task.length; i++){
+		for(var i=0; i&lt;response.task.length; i++){
 			this.query("INSERT INTO `task`(`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`) VALUES ('"+response.task[i].id+"', '"+response.task[i].type_id+
 			"', '"+response.task[i].operator+"', '"+response.task[i].name+"', '"+response.task[i].description+"', '"+response.task[i].value+"', '"+response.task[i].timestamp+"', '"+response.task[i].age+"', '"+response.task[i].gender+
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
 		}
 		
 		this.query("CREATE TABLE IF NOT EXISTS `course_student_task_attempt` (`id`, `course_student_id`, `task_id`, `value`, `timestamp`)", callback);
-		for(var i=0; i<response.course_student_task_attempt.length; i++){
+		for(var i=0; i&lt;response.course_student_task_attempt.length; i++){
 			this.query("INSERT INTO `course_student_task_attempt`(`id`, `course_student_id`, `task_id`, `value`, `timestamp`) VALUES ('"+response.course_student_task_attempt[i].id+"', '"+response.course_student_task_attempt[i].course_student_id+
 			"', '"+response.course_student_task_attempt[i].task_id+"', '"+response.course_student_task_attempt[i].value+"', '"+response.course_student_task_attempt[i].timestamp+
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
 		}
 		
 		this.query("CREATE TABLE IF NOT EXISTS `task_type` (`id`, `name`, `timestamp`)", callback);
-		for(var i=0; i<response.task_type.length; i++){
+		for(var i=0; i&lt;response.task_type.length; i++){
 			this.query("INSERT INTO `task_type`(`id`, `name`, `timestamp`) VALUES ('"+response.task_type[i].id+"', '"+response.task_type[i].name+
 			"', '"+response.task_type[i].timestamp+
 			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
@@ -160,14 +187,14 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
-				for(var i=0; i<data.course_student.length; i++){
+				for(var i=0; i&lt;data.course_student.length; i++){
 					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
 					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 				}
 			}
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
-					for(var i=0; i<data.course_student_task_attempt.length; i++){
+					for(var i=0; i&lt;data.course_student_task_attempt.length; i++){
 						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"'", "task"); 
 					}
 				} 
@@ -188,7 +215,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		var keyvalue = this.getArgs(data); 
 		qs.addQuery("SELECT DISTINCT `course_id`, `id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
-			for(var i=0; i<data.course_student.length; i++){
+			for(var i=0; i&lt;data.course_student.length; i++){
 				qs.addQuery("SELECT `name` FROM `course` WHERE `id` ='"+data.course_student[i].course_id+"'", "course");
 				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].id+"'", "course_student_task_attempt");
 			}
@@ -209,7 +236,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 resultsDatabase.prototype.getArgs = function(data){
 	var pairs = data.split("&"); 
 	var keyvalue = [];
-	for(var i=1; i<pairs.length; i++){
+	for(var i=1; i&lt;pairs.length; i++){
 		var splitValues = pairs[i].split("=");
 		keyvalue.push({key: splitValues[0], value: splitValues[1]});
 	}
@@ -299,7 +326,7 @@ queryStack.prototype.hasNewResults = function(){
 function qCallback(response, context, identifier, onFinish){
 	if (response.rows && response.rows.length) {
 		if(context.data[identifier] == undefined) context.data[identifier] = []; 
-		for(var i=0; i<response.rows.length; i++){
+		for(var i=0; i&lt;response.rows.length; i++){
 			context.data[identifier].push(response.rows.item(i));
 		}
 	}
@@ -307,3 +334,26 @@ function qCallback(response, context, identifier, onFinish){
 	context.reportingIn++; 
 	if(context.reportingIn == context.stack.length){ context.stack = []; onFinish(context.data); context.reportingIn = 0;}
 }
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Global</h3><ul><li><a href="global.html#qCallback">qCallback</a></li><li><a href="global.html#queryStack">queryStack</a></li><li><a href="global.html#resultsDatabase">resultsDatabase</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Fri Jul 05 2013 08:34:57 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

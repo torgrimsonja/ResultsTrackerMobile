@@ -8,10 +8,18 @@ $(function(){
 
 var courseToLoad; 
 
+/**
+ * Triggers the ajax call to return the course data. 
+ */
 function listCourses(){
 	genericAjax(asyncListCourses, 'requested=coursename', 'admin/mobileAjaxGate.php'); 
 }
 
+/**
+ * The callback from listCourses which actually fills index.html with the course data from the server. 
+ * @param {object} response - The ajax response from listCourses. If all goes well, this is JSON. 
+ * @param {string} type - A legacy parameter to differ between data from the master server and data from the local database. 
+ */ 
 function asyncListCourses(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 

@@ -1,5 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: course.js</title>
+    
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
 
-if(!(courseToLoad.length > 0)){ $('#course-landing-content').append('<h1 style="text-align: center;">There\'s been a mistake. Please return from whence you came.</h1>')} 
+<body>
+
+<div id="main">
+    
+    <h1 class="page-title">Source: course.js</h1>
+    
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source"><code>
+if(!(courseToLoad.length > 0)){ $('#course-landing-content').append('&lt;h1 style="text-align: center;">There\'s been a mistake. Please return from whence you came.&lt;/h1>')} 
 else {initializeTable(false); }
 	
 var studentToLoad; 
@@ -14,14 +41,14 @@ function initializeTable(response){
 	if(response){
 		if(!response.error){
 			var i=-1;
-			var tableHeadStr = '<tr><th id="bufferBox">Name</th>';
-			for(var i=0; i<response.taskname.length; i++){
-				tableHeadStr += '<th class="taskHeader" data-columnNum="'+i+'">'+response.taskname[i].name+'</th>';
+			var tableHeadStr = '&lt;tr>&lt;th id="bufferBox">Name&lt;/th>';
+			for(var i=0; i&lt;response.taskname.length; i++){
+				tableHeadStr += '&lt;th class="taskHeader" data-columnNum="'+i+'">'+response.taskname[i].name+'&lt;/th>';
 				taskCount++;
 			}
-			tableHeadStr += '</tr>';
+			tableHeadStr += '&lt;/tr>';
 			
-			$('#sTable').append($('<tr><td><table>'+tableHeadStr+'</table></td></tr>'));
+			$('#sTable').append($('&lt;tr>&lt;td>&lt;table>'+tableHeadStr+'&lt;/table>&lt;/td>&lt;/tr>'));
 			
 			createStudentView(false);
 		}
@@ -38,17 +65,17 @@ function createStudentView(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(response){
 		if(!response.error){
-			var tableStr = '<tr><td><div id="rowStyler"><table>';
+			var tableStr = '&lt;tr>&lt;td>&lt;div id="rowStyler">&lt;table>';
 			var i=-1;
-			for(var i=0; i<response.student.length; i++){
+			for(var i=0; i&lt;response.student.length; i++){
 				if(response.student[i].firstName != undefined){
-					tableStr += '<tr class="students" data-studId="'+response.student[i].id+'"><th class="rowHeader">'+response.student[i].firstName+' '+response.student[i].lastName+'</th></tr>';
+					tableStr += '&lt;tr class="students" data-studId="'+response.student[i].id+'">&lt;th class="rowHeader">'+response.student[i].firstName+' '+response.student[i].lastName+'&lt;/th>&lt;/tr>';
 				} 
-			} tableStr += '</table></div></td></tr>';
+			} tableStr += '&lt;/table>&lt;/div>&lt;/td>&lt;/tr>';
 			$('#sTable').append($(tableStr));
 			var emptyCells = '';
-			for(var i=0; i<taskCount; i++){
-				emptyCells += '<td class="emptyCell" data-columnNum="'+i+'"></td>';
+			for(var i=0; i&lt;taskCount; i++){
+				emptyCells += '&lt;td class="emptyCell" data-columnNum="'+i+'">&lt;/td>';
 			}
 			$('.students').append($(emptyCells));
 			$('.students').on("click", function(e){
@@ -57,7 +84,7 @@ function createStudentView(response, type){
 			});
 			var columnOfInterest;  
 			if(response.course_student_task_attempt != undefined){
-				for(var i=0; i<response.course_student_task_attempt.length; i++){
+				for(var i=0; i&lt;response.course_student_task_attempt.length; i++){
 					var thisAttempt = response.course_student_task_attempt[i]; 
 					var thisTask = response.task[i]; 
 					$('.taskHeader').each(function(){
@@ -68,7 +95,7 @@ function createStudentView(response, type){
 					});
 					$('.emptyCell').each(function(){
 						if($(this).attr("data-columnNum") == columnOfInterest && $($(this).parents().get(0)).attr("data-studid") == thisAttempt.course_student_id){
-							$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
+							$(this).append($('&lt;p>'+thisAttempt.value+'&lt;/p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
 						}
 					});
 				} 
@@ -87,7 +114,7 @@ function createStudentView(response, type){
 					clones.push({element: $(this).clone(), position: $(this).position(), height: $(this).height()});
 					$(this).attr("class", $(this).attr("class") + ' original');
 				});
-				for(var i=0; i<clones.length; i++){
+				for(var i=0; i&lt;clones.length; i++){
 					var clone = $(clones[i].element);
 					clone.css("position", "absolute").css("left", clones[i].position.left).css("top", clones[i].position.top).css("min-height", clones[i].height).css("z-index", "0").css("visibility", "hidden").attr("class", clone.attr("class") + ' clone');
 					$('#sTable').append(clone);
@@ -135,10 +162,10 @@ function isPassingReq(supplied, operator, required){
 				var adjustedSupp = (parseInt(split[0]) * 60) + parseInt(split[1]); 
 				split = required.split(":");
 				var adjustedReq = (parseInt(split[0]) * 60) + parseInt(split[1]); 
-				if(adjustedSupp <= adjustedReq) return true; 
+				if(adjustedSupp &lt;= adjustedReq) return true; 
 				else return false; 
 			} else {
-				if(parseFloat(supplied) <= parseFloat(required)) return true;
+				if(parseFloat(supplied) &lt;= parseFloat(required)) return true;
 				else return false; 
 			}
 		break; 
@@ -153,4 +180,26 @@ function isPassingReq(supplied, operator, required){
 function getProperColor(isPassing){
 	if(isPassing) return '#4CEB46'; 
 	else return '#EB464C';
-}
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Global</h3><ul><li><a href="global.html#createStudentView">createStudentView</a></li><li><a href="global.html#getProperColor">getProperColor</a></li><li><a href="global.html#initializeTable">initializeTable</a></li><li><a href="global.html#isPassingReq">isPassingReq</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.0-dev</a> on Fri Jul 05 2013 08:34:03 GMT-0700 (PDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
