@@ -168,7 +168,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
 					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"'", "task"); 
+						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
 					}
 				} 
 				qs.triggerStack(function(data){

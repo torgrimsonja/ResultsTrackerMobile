@@ -14,15 +14,16 @@ function initializeTable(response){
 	if(response){
 		if(!response.error){
 			var i=-1;
-			var tableHeadStr = '<tr><th id="bufferBox">Name</th>';
+			var tableHeadStr = '<table id="studentTable" data-role="table" data-mode="columnToggle" class="ui-responsive table-stroke"><thead><tr>';
+				tableHeadStr += '<th class="bufferBox"></th>';
 			for(var i=0; i<response.taskname.length; i++){
 				tableHeadStr += '<th class="taskHeader" data-columnNum="'+i+'">'+response.taskname[i].name+'</th>';
 				taskCount++;
 			}
-			tableHeadStr += '</tr>';
+			tableHeadStr += '</tr></thead>';
 			
-			$('#sTable').append($('<tr><td><table>'+tableHeadStr+'</table></td></tr>'));
-			
+			$('#studentTable').append($(tableHeadStr));
+			$('#students').append($(tableHeadStr+'</table')); 
 			createStudentView(false);
 		}
 	} else genericAjax(initializeTable, "requested=tasknames", 'admin/mobileAjaxGate.php');
@@ -37,20 +38,20 @@ function initializeTable(response){
 function createStudentView(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(response){
-		if(!response.error){
-			var tableStr = '<tr><td><div id="rowStyler"><table>';
-			var i=-1;
+		console.log(response);
+		if(!response.error){ 
+			var toAppend = ''; 
 			for(var i=0; i<response.student.length; i++){
 				if(response.student[i].firstName != undefined){
-					tableStr += '<tr class="students" data-studId="'+response.student[i].id+'"><th class="rowHeader">'+response.student[i].firstName+' '+response.student[i].lastName+'</th></tr>';
-				} 
-			} tableStr += '</table></div></td></tr>';
-			$('#sTable').append($(tableStr));
-			var emptyCells = '';
-			for(var i=0; i<taskCount; i++){
-				emptyCells += '<td class="emptyCell" data-columnNum="'+i+'"></td>';
+					toAppend += '<tr><th class="students" data-studId="'+response.student[i].id+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
+					for(var j=0; j<taskCount; j++){
+							toAppend += '<td class="emptyCell" data-columnNum="'+j+'"></td>'; 
+						}
+				}
+				toAppend += '</tr>';
 			}
-			$('.students').append($(emptyCells));
+			$('#studentTable').append($(toAppend));
+			$('#students').trigger("create"); 
 			$('.students').on("click", function(e){
 				studentToLoad = $(e.delegateTarget).attr("data-studId");
 				$.mobile.changePage("student.html");
@@ -67,13 +68,13 @@ function createStudentView(response, type){
 						}
 					});
 					$('.emptyCell').each(function(){
-						if($(this).attr("data-columnNum") == columnOfInterest && $($(this).parents().get(0)).attr("data-studid") == thisAttempt.course_student_id){
+						if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
 							$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
 						}
 					});
 				} 
 			}
-			setTimeout(function(){
+			/*setTimeout(function(){
 				var maxWidth = Number.NEGATIVE_INFINITY;
 				$('.rowHeader').each(function(){
 					maxWidth = Math.max(maxWidth, $(this).width());
@@ -100,8 +101,8 @@ function createStudentView(response, type){
 						toggled = true; 
 					}
 				});
-			}, 150);
-		}
+			}, 150);*/
+			}  
 	} else {
 		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 
 	}

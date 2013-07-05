@@ -3,10 +3,10 @@
 	width: 100%;
 }
 
-#sTable , #sTable td, #sTable th{
+#studentTable , #studentTable td, #studentTable th{
 	border: thin solid black;
 }
-.emptyCell, .cell, .taskHeader, .rowHeader, #bufferBox {
+.emptyCell, .cell, .taskHeader, .rowHeader {
 	background-color: white;
 }
 
