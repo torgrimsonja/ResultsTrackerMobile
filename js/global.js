@@ -16,45 +16,16 @@ $(document).bind("mobileinit", function(){
 	$.mobile.loader.prototype.options.theme = "a";
 	$.mobile.loader.prototype.options.html = "";
 	$.support.cors = true;
- $.mobile.allowCrossDomainPages = true; 
+	$.mobile.allowCrossDomainPages = true; 
 	$.mobile.defaultPageTransition = 'slide'; 
 	$.mobile.pushStateEnabled = false;
 });
 
 /**
- * Detects the mobile device being used and applies the appropriate css. 
+ * Detects the mobile device being used.
  */
 function detectDevice(){
-	var deviceIphone = "iphone";
-	var deviceIpod = "ipod";
-	var deviceIpad = "ipad";
-	var deviceAndroid = "android";
-
-	//Initialize our user agent string to lower case.
-	var uagent = navigator.userAgent.toLowerCase();
-	// Detects if the which os the current device is.
-	
-	// Detects if the current device is an iPhone or an iPod touch
-	if ((uagent.search(deviceIpod) > -1) || (uagent.search(deviceIphone) > -1)){
-	   // Just replacing the value of the 'content' attribute will not work.
-		console.log('Device is iPhone...');
-		$("#deviceSpecificCSS").attr("href","css/iosPageDesign.css");
-	}
-	else // Detects if the current device is an iPad
-	if (uagent.search(deviceIpad) > -1){
-	   // Just replacing the value of the 'content' attribute will not work.
-		console.log('Device is iPad');
-		$("#deviceSpecificCSS").attr("href","css/iPadDesign.css");
-	}
-	// Detects if the current device is Android.
-	else if (uagent.search(deviceAndroid) > -1){
-	   //Code Here
-	   console.log('Device is Andriod');
-	   $("#deviceSpecificCSS").attr("href","css/androidPageDesign.css");
-	}    
-	else{
-	   //Code Here
-	}
+	return uagent = navigator.userAgent.toLowerCase();
 }
 
 /**

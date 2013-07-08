@@ -1,2 +1,21 @@
-<h1>Joey:</h1>
-	*	Complete everything in todo
+<h3>Wednesday, July 3</h3> 
+
+*	Todo created 
+*	Github accessed
+*	Strategization
+
+<h3>Thursday, July 4</h3> 
+
+*	Tables messed with
+*	Bashed head on UI 
+*	Beginning of authentication work 
+
+<h3>Friday, July 5</h3> 
+
+*	Switched table to jqMobile table 
+*	More authentication, registration
+
+<h3>Monday, July 8</h3> 
+
+*	Registration set in stone
+*	Device IDs configured

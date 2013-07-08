@@ -9,3 +9,5 @@
 *	Figure out phonegap native thing for device registration
 *	Graph things
 *	Script to accept registrations from device
+*	Switch all database code to Phonegap DB
+*	Timestamps on local data
