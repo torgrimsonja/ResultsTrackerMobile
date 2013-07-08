@@ -17,6 +17,8 @@ function auth(uname, pword){
 			else { 
 				user.passHash = pword; 
 				user.username = uname; 
+				//$.cookie(
+				//TODO: magic
 				$.mobile.changePage("index.html"); 
 				listCourses(); 
 			}
@@ -86,8 +88,8 @@ function registrationResponse(resp){
 }
 
 function registrationSuccess(){
-	$('#register').children('div[role|="dialog"]').html("<div data-role=\"content\"><h1> Success! </h1></div>"); 
+	$('#register').children('div[role|="dialog"]').html("<div data-role=\"content\"><h1 style=\"color: white;\"> Success! </h1></div>"); 
 	setTimeout(function(){
-		//$('#register').dialog('close');
+		$('#register').dialog('close');
 	}, 2000);
 }

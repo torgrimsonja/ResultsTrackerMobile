@@ -1,7 +1,7 @@
 $(function(){
-	$('#index-landing').bind("pageshow", function(){
-		if(!user.authed) $.mobile.changePage('login.html');
-		if($('#index-header p').length == 0) $('#index-header').append($('<p>Logged in as '+user.username+'</p>'));
+	$('#index-landing').on("pagebeforeshow", function(){
+		if($('#index-header p').length == 0) $('#index-header').prepend($('<a data-icon="delete">Log Out</a>'));
+		$('#index-landing').trigger('create');
 	});
 	if(!user.authed) $.mobile.changePage('login.html');
 });

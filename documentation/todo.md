@@ -11,3 +11,4 @@
 *	Script to accept registrations from device
 *	Switch all database code to Phonegap DB
 *	Timestamps on local data
+*	Cookie stuff, algorithim, etc. 

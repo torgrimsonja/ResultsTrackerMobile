@@ -53,7 +53,7 @@ function detectDevice(){
 
 $(document).on('pageinit', function() {	
 	//Wait for PhoneGap to load
-	document.addEventListener("deviceready", detectDevice(), false);
+	//document.addEventListener("deviceready", detectDevice(), false);
 });
 
 /**

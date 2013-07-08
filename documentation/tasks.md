@@ -19,3 +19,6 @@
 
 *	Registration set in stone
 *	Device IDs configured
+*	Buttons
+*	JS bugs.
+*	PHP bugs. 
