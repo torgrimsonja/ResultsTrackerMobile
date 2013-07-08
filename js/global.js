@@ -25,7 +25,7 @@ $(document).bind("mobileinit", function(){
  * Detects the mobile device being used.
  */
 function detectDevice(){
-	return uagent = navigator.userAgent.toLowerCase();
+	return uagent = var deviceName = device.model + ' ' + device.platform + ' ' + device.version; //ex: 'iPhone5,1 iOS 5.1.1', 'NexusOne Android 4.2';
 }
 
 /**
