@@ -4,7 +4,7 @@
  */
 
 var resultsDatabase = function() {
-	this.db, this.complete = false; 
+	this.db, this.complete = false, this.createAsync = 0; 
 }
 
 /**
@@ -12,16 +12,27 @@ var resultsDatabase = function() {
  * @param {int} size - Ignored if above 5MB, specifies database size 
  */ 
 
-resultsDatabase.prototype.initDb = function(size){
+resultsDatabase.prototype.initDb = function(){
 	console.log("Initializing local database");
 	try {
-		resultsDatabase.db = openDatabase("resultsTracker","0.5","Results Tracker Local Database", size);
-	} catch (e){
-		console.log(e.message);
+		if(device) {
+			resultsDatabase.db = window.sqlitePlugin.openDatabase("resultsTracker");
+			console.log("Using SQLite plugin.");
+		} 
 	}
+	catch(e){
+		if(e.message == 'device is not defined'){ //phonegap not loaded
+			try {
+				resultsDatabase.db = openDatabase("resultsTracker","0.5","Results Tracker Local Database", 1000000);
+				console.log("Using web SQL"); 
+			} catch (e) {
+				console.log(e.message); 
+			}
+		}
+	}
+	
 	this.checkIfLoaded();
 }
-
 /**
  * Checks if the database is loaded by selecting a specific row. If it isn't loaded, this function will initiate the sync. 
  */ 
@@ -29,15 +40,14 @@ resultsDatabase.prototype.initDb = function(size){
 resultsDatabase.prototype.checkIfLoaded = function(){
 	var ref = this; 
 	console.log("Checking if database exists...");
-	resultsDatabase.db.transaction(function (tx) {
-		tx.executeSql("SELECT * FROM `task_type` LIMIT 1", [], function(tx, results){
-			if(results.rows && results.rows.length){
-				console.log("Does exist.");
-				ref.complete = true;	
-			} else {
-				console.log("Does not exist - downloading...");
-				ref.downloadServer();
-			}
+	resultsDatabase.db.transaction(function(tx){
+		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, success){
+			console.log("Does exist.");
+			ref.complete = true;
+			$(document).trigger("databaseready"); 
+		}, function(error){
+			console.log("Does not exist - downloading...");
+			ref.downloadServer();
 		});
 	});
 }
@@ -64,51 +74,85 @@ resultsDatabase.prototype.downloadServer = function(){
  */
 
 resultsDatabase.prototype.syncResponse = function(response){
+	var qz = new queryStack(this); 
+	
 	response = $.parseJSON(response);
+	var queriesToMake = 0; 
 	if(!response.error){ //TODO: pull table structure from server
-		this.query("CREATE TABLE IF NOT EXISTS `course`(`id` , `user_id`, `name`, `active`, `timestamp`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `course`(`id` , `user_id`, `name`, `active`, `timestamp`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.course.length; i++){
-			this.query("INSERT INTO `course`(`id`,`name`,`active`,`timestamp`, `user_id`) VALUES ('"+response.course[i].id+"', '"+response.course[i].name+"', '"+response.course[i].active+"', '"+response.course[i].timestamp+"', '"+response.course[i].user_id+
-			"')", callback);// WHERE NOT EXISTS (SELECT * FROM `course` WHERE `name` = '"+response.course[i].name+"')", callback);
+			qz.addQuery("INSERT INTO `course`(`id`,`name`,`active`,`timestamp`, `user_id`) VALUES ('"+response.course[i].id+"', '"+response.course[i].name+"', '"+response.course[i].active+"', '"+response.course[i].timestamp+"', '"+response.course[i].user_id+
+			"')", asyncCounter);// WHERE NOT EXISTS (SELECT * FROM `course` WHERE `name` = '"+response.course[i].name+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.query("CREATE TABLE IF NOT EXISTS `course_student` ( `id` , `student_id`, `course_id`, `timestamp`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `course_student` ( `id` , `student_id`, `course_id`, `timestamp`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.course_student.length; i++){
-			this.query("INSERT INTO `course_student` (`id` , `student_id`, `course_id`, `timestamp`) VALUES ('"+response.course_student[i].id+"', '"+response.course_student[i].student_id+
+			qz.addQuery("INSERT INTO `course_student` (`id` , `student_id`, `course_id`, `timestamp`) VALUES ('"+response.course_student[i].id+"', '"+response.course_student[i].student_id+
 			"', '"+response.course_student[i].course_id+"', '"+response.course_student[i].timestamp+
-			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `course_student` WHERE `id` = '"+response.course_student[i].id+"')", callback);
+			"')", asyncCounter); //WHERE NOT EXISTS (SELECT * FROM `course_student` WHERE `id` = '"+response.course_student[i].id+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.query("CREATE TABLE IF NOT EXISTS `student` (`id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `student` (`id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.student.length; i++){
-			this.query("INSERT INTO `student`( `id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`) VALUES ('"+response.student[i].id+"', '"+response.student[i].firstName+
+			qz.addQuery("INSERT INTO `student`( `id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`) VALUES ('"+response.student[i].id+"', '"+response.student[i].firstName+
 			"', '"+response.student[i].lastName+"', '"+response.student[i].gender+"', '"+response.student[i].dateOfBirth+"', '"+response.student[i].code+
-			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `student` WHERE `id` = '"+response.student[i].id+"')", callback);
+			"')", asyncCounter); //WHERE NOT EXISTS (SELECT * FROM `student` WHERE `id` = '"+response.student[i].id+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.query("CREATE TABLE IF NOT EXISTS `task` (`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `task` (`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.task.length; i++){
-			this.query("INSERT INTO `task`(`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`) VALUES ('"+response.task[i].id+"', '"+response.task[i].type_id+
+			qz.addQuery("INSERT INTO `task`(`id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`) VALUES ('"+response.task[i].id+"', '"+response.task[i].type_id+
 			"', '"+response.task[i].operator+"', '"+response.task[i].name+"', '"+response.task[i].description+"', '"+response.task[i].value+"', '"+response.task[i].timestamp+"', '"+response.task[i].age+"', '"+response.task[i].gender+
-			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			"')", asyncCounter); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.query("CREATE TABLE IF NOT EXISTS `course_student_task_attempt` (`id`, `course_student_id`, `task_id`, `value`, `timestamp`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `course_student_task_attempt` (`id`, `course_student_id`, `task_id`, `value`, `timestamp`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.course_student_task_attempt.length; i++){
-			this.query("INSERT INTO `course_student_task_attempt`(`id`, `course_student_id`, `task_id`, `value`, `timestamp`) VALUES ('"+response.course_student_task_attempt[i].id+"', '"+response.course_student_task_attempt[i].course_student_id+
+			qz.addQuery("INSERT INTO `course_student_task_attempt`(`id`, `course_student_id`, `task_id`, `value`, `timestamp`) VALUES ('"+response.course_student_task_attempt[i].id+"', '"+response.course_student_task_attempt[i].course_student_id+
 			"', '"+response.course_student_task_attempt[i].task_id+"', '"+response.course_student_task_attempt[i].value+"', '"+response.course_student_task_attempt[i].timestamp+
-			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			"')", asyncCounter); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.query("CREATE TABLE IF NOT EXISTS `task_type` (`id`, `name`, `timestamp`)", callback);
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `task_type` (`id`, `name`, `timestamp`)", asyncCounter); queriesToMake++; 
 		for(var i=0; i<response.task_type.length; i++){
-			this.query("INSERT INTO `task_type`(`id`, `name`, `timestamp`) VALUES ('"+response.task_type[i].id+"', '"+response.task_type[i].name+
+			qz.addQuery("INSERT INTO `task_type`(`id`, `name`, `timestamp`) VALUES ('"+response.task_type[i].id+"', '"+response.task_type[i].name+
 			"', '"+response.task_type[i].timestamp+
-			"')", callback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			"')", asyncCounter); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
+			queriesToMake++; 
 		}
 		
-		this.dumpDbInConsole();
+		qz.addQuery("CREATE TABLE IF NOT EXISTS `device` (`id`, `prop_name`, `prop_value`)", asyncCounter); queriesToMake++; 
+		
+		qz.triggerStack(function(data){ console.log("here!"); $(document).trigger("databaseready"); });
+		//this.dumpDbInConsole();
 	}
+}
+
+function defaultCallback(data){}
+
+
+function checkAsync(expected){
+	setTimeout(function(){  
+		console.log("checking: at "+db.createAsync+" looking for: "+expected);
+		if(db.createAsync == expected) $(document).trigger("databaseready"); 
+		else checkAsync(expected); 
+	}, 200);
+}
+
+function asyncCounter(){
+	db.createAsync++;
+	console.log(db.createAsync);
+}
+
+function dumpCallback(data){
+	if(data.rows && data.rows.length)
+		for(var i=0; i<data.rows.length; i++)
+			console.log(data.rows[i]); 
 }
 
 /**
@@ -131,11 +175,11 @@ resultsDatabase.prototype.query = function(q, callback){
  */ 
 
 resultsDatabase.prototype.dumpDbInConsole = function(){
-	this.query("SELECT * FROM `course` ", callback);
-	this.query("SELECT * FROM `student`", callback);
-	this.query("SELECT * FROM `task`", callback);
-	this.query("SELECT * FROM `task_type`", callback);
-	this.query("SELECT * FROM `course_student_task_attempt`", callback);
+	this.query("SELECT * FROM `course` ", dumpCallback);
+	this.query("SELECT * FROM `student`", dumpCallback);
+	this.query("SELECT * FROM `task`", dumpCallback);
+	this.query("SELECT * FROM `task_type`", dumpCallback);
+	this.query("SELECT * FROM `course_student_task_attempt`", dumpCallback);
 }
 
 /**
@@ -195,9 +239,16 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			qs.triggerStack(function(data){
 				call(data, 'local');
 			});
-		});
-		
-		
+		});	
+	} else if (data == "uniqueId"){
+		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'device_id' LIMIT 1", "device_id");
+		qs.triggerStack(function(data){ call(data, 'local'); }); 
+	}
+	
+	else if (data == "auth"){
+		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1", "username"); 
+		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'passHash' LIMIT 1", "passHash");
+		qs.triggerStack(function(data){ call(data, 'local'); });
 	}
 }
 
@@ -226,6 +277,7 @@ resultsDatabase.prototype.destroyAndRebuild = function(){
 	this.query("DROP TABLE IF EXISTS `task`", callback);
 	this.query("DROP TABLE IF EXISTS `task_type`", callback);
 	this.query("DROP TABLE IF EXISTS `course_student_task_attempt`", callback);
+	this.query("");
 	this.downloadServer();
 }
 

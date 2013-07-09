@@ -1,16 +1,25 @@
 //JavaScript Document
 
-var DB_SIZE = 1000000,
-REMOTE_PATH = 'http://killit.atsolinc.com/',
+var REMOTE_PATH = 'http://killit.atsolinc.com/',
 DATA_THEME = 'c',
 c = 299792458, // m/s
-user = {authed: false, username: null, passHash: null}; 
+user = {authed: false, username: null, passHash: null},
+db, isPhoneGap = false; 
 
-var db = new resultsDatabase(); 
-db.initDb(DB_SIZE);
+function onLoad(){
+	document.addEventListener("deviceready", onStartUp, false);
+	$(document).one("databaseready", function(e){checkId();});
+	setTimeout(function(){
+		if(!isPhoneGap){
+			fixJquery();
+			db = new resultsDatabase();
+			db.initDb();
+		}
+	}, 5000); 
+}
 
-//Global initialization functions here
-$(document).bind("mobileinit", function(){
+
+function fixJquery(){
 	$.mobile.loader.prototype.options.text = "Loading...";
 	$.mobile.loader.prototype.options.textVisible = false;
 	$.mobile.loader.prototype.options.theme = "a";
@@ -19,13 +28,30 @@ $(document).bind("mobileinit", function(){
 	$.mobile.allowCrossDomainPages = true; 
 	$.mobile.defaultPageTransition = 'slide'; 
 	$.mobile.pushStateEnabled = false;
-});
+}
 
+
+function onStartUp(){
+	isPhoneGap = true; 
+	try {
+		console.log("trying device");
+		//Global initialization functions here
+		$(document).one("mobileinit", function(){
+			fixJquery();
+			db = new resultsDatabase(); 
+			db.initDb();
+		});
+	}
+	 catch(e) {
+		console.log(e.message); 
+	}
+}
 /**
  * Detects the mobile device being used.
  */
 function detectDevice(){
-	return device.model + ' ' + device.platform + ' ' + device.version; //ex: 'iPhone5,1 iOS 5.1.1', 'NexusOne Android 4.2';
+	if(isPhoneGap) return device.model + ' ' + device.platform + ' ' + device.version; //ex: 'iPhone5,1 iOS 5.1.1', 'NexusOne Android 4.2'
+	else return 'browser or something'; 
 }
 
 /**
@@ -75,7 +101,35 @@ function genericAjax(callback, data, path){
 		});	 */
 }
 
+function checkId(){ 
+	db.localQuery("uniqueId", function(data){
+		console.log(data);
+		if (data.device_id != undefined && data.device_id[0].prop_value > 0 ) {
+			reactToId(true); 
+		} else {
+			reactToId(false);
+		}
+	});
+}
 
+function reactToId(exists){
+	if (exists) db.localQuery("auth", function(data){
+		if(data.username != undefined && data.passHash != undefined){
+			$.mobile.changePage('index.html');
+			listCourses();
+		}
+	});
+	else {
+		deviceRegister(function(data){ console.log(data); }); 
+	}
+}
 
+function deviceRegister(callback){
+	$.post(REMOTE_PATH + 'mobile_app/device_registration.php', {'deviceType' : detectDevice(), 'timestamp' : new Date().getTime()}, function(data) {
+		data = JSON.parse(data);
+		console.log("registering via post");
+		db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('device_id', "+data.deviceID+")", function(){checkId();}); 
+	}).error(function() { console.log('Device registration failed.'); });
+}
 
 

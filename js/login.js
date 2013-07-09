@@ -11,42 +11,36 @@ function submitForm(prevAuthed){
 function auth(uname, pword){
 	$.ajax({
 		url: REMOTE_PATH+'mobile_app/check_credentials.php',
+		crossDomain: true,
+		beforeSend : function() {$.mobile.loading('show')},
+		complete   : function() {$.mobile.loading('hide')},
 		success: function(data, status, jqXHR) {
 			user.authed = $.parseJSON(jqXHR.responseText).authenticated ? true : false; 
 			if(!user.authed) submitForm(true); 
 			else { 
-				user.passHash = pword; 
+				user.passHash = hex_sha1(pword); 
 				user.username = uname; 
-				//$.cookie(
-				//TODO: magic
 				$.mobile.changePage("index.html"); 
-				listCourses(); 
+				listCourses(); 												//insert magic algorithm
+				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
+				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
 			}
 		},
+		error: function(jqXHR){ console.log(jqXHR); console.log(JSON.stringify(jqXHR)); },
 		type: 'POST',
-		data: 'username='+uname+'&password='+hex_sha1(pword)
+		data: {username: uname, password: hex_sha1(pword) }
 	});
 }
 
-function deviceRegister(){
-	$.ajax({
-		url: REMOTE_PATH+'mobile_app/device_register.php',
-		success: function(data, status, jqXHR){
-			return $.parseJSON(jqXHR.responseText); 
-		},
-		type: 'POST',
-		data: 'deviceType=' //+ phonegap native thing 
-	}); 
-}
 
 function reg(){
 	var valid = true,
 	
-	userValidated = /[A-z0-9_\-]{3,16}/.exec($('#regUsername').val());
+	userValidated = /[A-z0-9_\-]{3,200}/.exec($('#regUsername').val());
 	if(userValidated !== null && userValidated[0] === userValidated.input) console.log("username valid"); 
 	else { $('#regUsernameError').text("Invalid username. Allowed characters: A-z0-9_-"); valid = false; } 
 	
-	var regPass1Validated = /.{6,32}/.exec($('#regPass1').val()); 
+	var regPass1Validated = /(.{6,3000}) | (.)/.exec($('#regPass1').val()); 
 	if(regPass1Validated !== null && regPass1Validated[0] === regPass1Validated.input){
 		if(regPass1Validated[0] === $('#regPass2').val()) console.log("password valid and matching");
 		else { $('#regPasswordError').text("Passwords do not match."); valid = false; }

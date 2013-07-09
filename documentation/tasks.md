@@ -22,3 +22,10 @@
 *	Buttons
 *	JS bugs.
 *	PHP bugs. 
+
+<h3>Tuesday, July 9</h3> 
+
+*	Local persistant logins work 
+*	The local database works on mobile devices (plugins)
+*	Debugging Android app: the thing actually runs, though
+
