@@ -78,6 +78,7 @@ function createStudentView(response, type){
 		}  
 		
 	} else {
+
 		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 
 	}
 }

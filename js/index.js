@@ -1,5 +1,6 @@
 $(function(){
-	if(!user.authed) $.mobile.changePage('login.html');
+	if(!user.authed) //$.mobile.changePage('login.html'); 
+		$('#openLogin').click();
 });
 
 var courseToLoad; 

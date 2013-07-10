@@ -16,7 +16,7 @@ function onLoad(){
 			db = new resultsDatabase();
 			db.initDb();
 		}
-	}, 5000); 
+	}, 50); 
 }
 
 
@@ -28,7 +28,6 @@ function fixJquery(){
 	$.support.cors = true;
 	$.mobile.allowCrossDomainPages = true; 
 	$.mobile.defaultPageTransition = 'slide'; 
-	$.mobile.pushStateEnabled = false;
 }
 
 
@@ -59,11 +58,13 @@ function detectDevice(){
 	function escapeSqlString(string){
 		if(string != null){
 			if(string.length>0){
+
 				var result = string.replace(/"/g,'');
 				result = result.replace(/'/g,'	');
 				result = result.replace("<", ""); 
 				result = result.replace(">", ""); 
-				return result;	
+				return result;
+				
 			}else{
 				return '';	
 			}
@@ -86,8 +87,10 @@ function genericAjax(callback, data, path){
 function checkId(){ 
 	db.localQuery("uniqueId", function(data){
 		if (data.device_id != undefined && data.device_id[0].prop_value > 0 ) {
+			console.log("calling react true");
 			reactToId(true); 
 		} else {
+			console.log("calling react false");
 			reactToId(false);
 		}
 	});
