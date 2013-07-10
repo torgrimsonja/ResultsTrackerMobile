@@ -21,6 +21,7 @@ function auth(uname, pword){
 				user.passHash = hex_sha1(pword); 
 				user.username = uname; 
 				$.mobile.changePage("index.html"); 
+				$('#course').html('');
 				listCourses(); 												//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
@@ -86,4 +87,11 @@ function registrationSuccess(){
 	setTimeout(function(){
 		$('#register').dialog('close');
 	}, 2000);
+}
+
+function logOut(){
+	console.log("user authed = "+user.authed);
+	if(user.authed) db.localQuery("logout", function(data){
+		$.mobile.changePage("login.html");
+	});
 }

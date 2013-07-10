@@ -41,14 +41,16 @@ resultsDatabase.prototype.checkIfLoaded = function(){
 	var ref = this; 
 	console.log("Checking if database exists...");
 	resultsDatabase.db.transaction(function(tx){
-		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, success){
-			console.log("Does exist.");
-			ref.complete = true;
-			$(document).trigger("databaseready"); 
-		}, function(error){
-			console.log("Does not exist - downloading...");
-			ref.downloadServer();
+		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, res){
+			console.log("result: "+res);
+			if(res.rows && res.rows.length){ 
+				ref.complete = true;
+				$(document).trigger("databaseready"); 
+			}
 		});
+	}, function(e){
+		console.log("does not exist.");
+		ref.downloadServer(); 
 	});
 }
 
@@ -135,20 +137,6 @@ resultsDatabase.prototype.syncResponse = function(response){
 
 function defaultCallback(data){}
 
-
-function checkAsync(expected){
-	setTimeout(function(){  
-		console.log("checking: at "+db.createAsync+" looking for: "+expected);
-		if(db.createAsync == expected) $(document).trigger("databaseready"); 
-		else checkAsync(expected); 
-	}, 200);
-}
-
-function asyncCounter(){
-	db.createAsync++;
-	console.log(db.createAsync);
-}
-
 function dumpCallback(data){
 	if(data.rows && data.rows.length)
 		for(var i=0; i<data.rows.length; i++)
@@ -194,13 +182,15 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	var ref = this; //I keep this reference around to use prototype methods deeper in
 	var qs = new queryStack(this);
 	if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
+	var returned = false;
 		qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", "name");
 		qs.triggerStack(function(data){
-			call(data, 'local'); 
+			if(!returned){ call(data, 'local'); returned = true; } 
 		}); 
 	}
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
-		var keyvalue = this.getArgs(data); 
+		var returned = false,
+		keyvalue = this.getArgs(data); 
 		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
@@ -216,39 +206,50 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 					}
 				} 
 				qs.triggerStack(function(data){
-					call(data, 'local'); 
+					if(!returned){ call(data, 'local'); returned = true; }; 
 				});
 			});
 		});
 		
 	} else if(data == "requested=tasknames"){
 		qs.addQuery("SELECT DISTINCT `name` FROM `task`", "taskname");
+		var returned = false; 
 		qs.triggerStack(function(data) {
-			call(qs.data, 'local');
+			if(!returned){ call(qs.data, 'local'); returned = true; }
 		});
 	}
 	
 	else if(data.search("requested=examineStudent") > -1){
-		var keyvalue = this.getArgs(data); 
+		var keyvalue = this.getArgs(data),
+		returned = false; 
 		qs.addQuery("SELECT DISTINCT `course_id`, `id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			for(var i=0; i<data.course_student.length; i++){
 				qs.addQuery("SELECT `name` FROM `course` WHERE `id` ='"+data.course_student[i].course_id+"'", "course");
 				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].id+"'", "course_student_task_attempt");
 			}
+			
 			qs.triggerStack(function(data){
-				call(data, 'local');
+				if(!returned){ call(data, 'local'); returned = true; }
 			});
 		});	
 	} else if (data == "uniqueId"){
+		var returned = false; 
 		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'device_id' LIMIT 1", "device_id");
-		qs.triggerStack(function(data){ call(data, 'local'); }); 
+		qs.triggerStack(function(data){ if(!returned){ call(data, 'local'); returned = true; }}); 
 	}
 	
 	else if (data == "auth"){
+		var returned = false; 
 		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1", "username"); 
 		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'passHash' LIMIT 1", "passHash");
-		qs.triggerStack(function(data){ call(data, 'local'); });
+		qs.triggerStack(function(data){ if(!returned){ call(data, 'local'); returned = true; }});
+	}
+	
+	else if (data == "logout"){
+		console.log("database logging out");
+		qs.addQuery("DELETE FROM `device` WHERE `prop_name` = 'username' OR `prop_name` = 'passHash'", "none");
+		qs.triggerStack(function(data){ call(data, 'local');});
 	}
 }
 
