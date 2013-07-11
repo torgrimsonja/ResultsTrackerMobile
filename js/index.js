@@ -20,7 +20,7 @@ function listCourses(){
 function asyncListCourses(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 
-		$("#courses").append($('<input type="button" style="height: 200px; width: 100%;" value="SYNC" />').on('click', function() {
+		$("#courses").append($('<input type="button" style="height: 200px; width: 100%;" value="SYNC by Nathan Eliason" />').on('click', function() {
 			syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames();
 		}));
 		var i=-1;
@@ -42,6 +42,8 @@ function asyncListCourses(response, type){
 }
 
 function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames() {
+	console.log('user.username: ' + JSON.stringify(user.username));
+	console.log('user.passHash: ' + JSON.stringify(user.passHash));
 	$.post(REMOTE_PATH + 'mobile_app/sync.php', {
 		'username' 	: user.username,
 		'password'	: user.passHash,
