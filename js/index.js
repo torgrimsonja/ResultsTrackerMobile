@@ -1,7 +1,6 @@
-$(function(){
-	if(!user.authed) //$.mobile.changePage('login.html'); 
-		$('#openLogin').click();
-	else db.checkIfLoaded(true);
+$('#index-landing').on("load", function(){
+	console.log("auth"+user.authed);
+	
 });
 
 var courseToLoad; 

@@ -10,11 +10,14 @@ function onLoad(){
 	console.log("onload fired, binding...");
 	$(document).one("deviceready", function(e){onStartUp();});
 	$(document).one("databaseready", function(e){checkId();});
+	
 	setTimeout(function(){
 		if(!isPhoneGap){
 			fixJquery();
 			db = new resultsDatabase();
 			db.initDb();
+			if(!user.authed) 
+				$('#openLogin').click();
 		}
 	}, 50); 
 }

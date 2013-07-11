@@ -31,25 +31,35 @@ resultsDatabase.prototype.initDb = function(){
 		}
 	}
 	
-	this.checkIfLoaded();
+	this.query("CREATE TABLE IF NOT EXISTS `device`(`rem_id` varchar(255), `prop_name` varchar(255), `prop_value` varchar(255))", function(){}); 
+	
+	this.checkIfLoaded(false);
 }
 /**
  * Checks if the database is loaded by selecting a specific row. If it isn't loaded, this function will initiate the sync. 
  */ 
 
-resultsDatabase.prototype.checkIfLoaded = function(){
+resultsDatabase.prototype.checkIfLoaded = function(download){
 	var ref = this; 
 	console.log("Checking if database exists...");
 	resultsDatabase.db.transaction(function(tx){
-		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, res){
+		tx.executeSql("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1",[],function(tx, res){
 			if(res.rows && res.rows.length){ 
-				ref.complete = true;
-				$(document).trigger("databaseready"); 
+				tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, result){
+					console.log("thing");
+					if(result.rows != undefined && result.rows.length > 0){
+						ref.complete = true;
+						$(document).trigger("databaseready"); 
+					} else ref.downloadServer();
+				});
+			} else {
+				console.log("does not exist.");
+				if(download)ref.downloadServer(); 
 			}
 		});
 	}, function(e){
 		console.log("does not exist.");
-		ref.downloadServer(); 
+		if(download)ref.downloadServer(); 
 	});
 }
 
@@ -58,6 +68,8 @@ resultsDatabase.prototype.checkIfLoaded = function(){
  */
 
 resultsDatabase.prototype.downloadServer = function(){
+	console.log("downloading db...");
+	var ref = this; 
 	$('body').append($('<div id="clickBlocker"></div>'));
 	$.mobile.loading( "show", {
 		text: "Syncing database...",
@@ -65,15 +77,7 @@ resultsDatabase.prototype.downloadServer = function(){
 		theme: "c",
 		html: ""
 	});
-	var ref = this;
-	$.ajax({
-		url: REMOTE_PATH + 'mobile_app/sync.php', 
-		success: function(data, status, jqXHR){
-			ref.syncResponse(jqXHR.responseText); 
-		},
-		type: 'POST',
-		data: 'requested=replicateDb'
-	});	
+	syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(0, '[]', this.syncResponse); 
 }
 
 /**
@@ -169,6 +173,7 @@ function dumpCallback(data){
 resultsDatabase.prototype.query = function(q, callback){
 	resultsDatabase.db.transaction(function (tx) {
 		tx.executeSql(q, [], function(tx, results){
+			console.log(q);
 			if(callback.callback != undefined) callback.callback(results, callback.context, callback.identifier, callback.onFinish); 
 			else callback(results);
 		});
