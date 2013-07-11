@@ -9,6 +9,7 @@ var courseToLoad;
  * Triggers the ajax call to return the course data. 
  */
 function listCourses(){
+	console.log("listing courses");
 	genericAjax(asyncListCourses, 'requested=coursename', 'admin/mobileAjaxGate.php'); 
 }
 
@@ -22,7 +23,7 @@ function asyncListCourses(response, type){
 	if(!response.error){ 
 		var i=-1;
 		for(var i=0; i<response["name"].length; i++){
-			var id=response.name[i].id;
+			var id=response.name[i].rem_id;
 			var name = response.name[i].name; 
 			//The fancy classes are to trick jquery mobile css into giving it the smooth button treatment
 			//Normally these classes are auto-applied, but when generated post-pageload one has to do it all himself

@@ -1,1 +1,16 @@
-/**/
+* {
+	position: relative;
+	margin: 0; 
+	padding: 0; 
+	top: 0;
+	left: 0; 
+}
+
+#clickBlocker {
+	width: 100%;
+	height: 100%;
+	background-color: black;
+	opacity: 0.3; 
+	position: relative;
+	z-index: 100; 
+}
