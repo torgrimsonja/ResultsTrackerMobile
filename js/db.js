@@ -67,7 +67,7 @@ resultsDatabase.prototype.downloadServer = function(){
 	});
 	var ref = this;
 	$.ajax({
-		url: 'http://killit.atsolinc.com/admin/mobileAjaxGate.php', 
+		url: REMOTE_PATH + 'mobile_app/sync.php', 
 		success: function(data, status, jqXHR){
 			ref.syncResponse(jqXHR.responseText); 
 		},
@@ -83,8 +83,26 @@ resultsDatabase.prototype.downloadServer = function(){
 
 resultsDatabase.prototype.syncResponse = function(response){
 	var qz = new queryStack(this); 
-	response = $.parseJSON(response);
+	response = $.parseJSON(unescape(response));
 	if(!response.error){ //TODO: pull table structure from server
+		for(var prop in response){
+			if(response.hasOwnProp(prop)){
+				var tableArr = []; 
+				for(var k=0; k<response[prop][0].length; k++){
+					tableArr.push('`'+escapeSqlString(response[prop][0][k])+'` varchar(255)'); 
+				}	
+				qz.addQuery("CREATE TABLE IF NOT EXISTS `"+prop+"` ("+tableArr.join(', ')+")"); 
+				for(var j=1; j<response[prop].length; j++){
+					var valueArr = []; 
+					for(var vProp in response[prop][j]){
+						valueArr.push("'"+escapeSqlString(vProp)+"'");
+					}
+					qz.addQuery("INSERT INTO `"+prop+"` VALUES ("+valueArr.join(', ')+")");
+				}				
+			}
+		}
+		
+		/*
 		qz.addQuery("CREATE TABLE IF NOT EXISTS `course`(`rem_id` , `user_id`, `name`, `active`, `timestamp`)", defaultCallback); 
 		for(var i=0; i<response.course.length; i++){
 			qz.addQuery("INSERT INTO `course`(`rem_id`,`name`,`active`,`timestamp`, `user_id`) VALUES ('"+response.course[i].id+"', '"+response.course[i].name+"', '"+response.course[i].active+"', '"+response.course[i].timestamp+"', '"+response.course[i].user_id+
@@ -128,7 +146,7 @@ resultsDatabase.prototype.syncResponse = function(response){
 		
 		qz.addQuery("CREATE TABLE IF NOT EXISTS `device` (`rem_id`, `prop_name`, `prop_value`)", defaultCallback);
 		qz.addQuery("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('last_sync', '"+new Date().getTime()+"')", defaultCallback); 
-		
+		*/
 		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); });
 		//this.dumpDbInConsole();
 	}
@@ -209,7 +227,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		});
 		
 	} else if(data == "requested=tasknames"){
-		qs.addQuery("SELECT DISTINCT `name` FROM `task`", "taskname");
+		qs.addQuery("SELECT DISTINCT `name`, `type_id` FROM `task`", "taskname");
 		qs.triggerStack(function(data) {
 			call(data, 'local');
 		});
@@ -246,6 +264,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		console.log("database logging out");
 		qs.addQuery("DELETE FROM `device` WHERE `prop_name` = 'username' OR `prop_name` = 'passHash'", "none");
 		qs.triggerStack(function(data){ call(data, 'local');});
+	}
+	
+	else if (data.search("requested=insertNewAttempt") > -1){
+		var keyvalue = this.getArgs(data); 
+		//qs.addQuery("SELECT 
 	}
 }
 
