@@ -29,3 +29,8 @@
 *	The local database works on mobile devices (plugins)
 *	Debugging Android app: the thing actually runs, though
 
+<h3>Wednesday, July 10</h3> 
+
+*	More Android debugging 
+*	Dialog bug fixed
+*	Auto-downloading database configured
