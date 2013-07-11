@@ -129,7 +129,12 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 		'changes'	: changes, 
 		'timestamp'	: new Date().getTime() 
 	}, function(successData) {
-		callback(successData);
+		successData = JSON.parse(unescape(successData));
+		if (successData.credentialsCorrect) {
+			callback(successData.changes);
+		} else {
+			console.log(":p credentials were wrong!!!");	
+		}
 	}).error(function(error) {
 		console.log(':(');
 	});
