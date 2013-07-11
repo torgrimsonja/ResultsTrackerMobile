@@ -9,7 +9,6 @@ var courseToLoad;
  * Triggers the ajax call to return the course data. 
  */
 function listCourses(){
-	console.log("listing courses");
 	genericAjax(asyncListCourses, 'requested=coursename', 'admin/mobileAjaxGate.php'); 
 }
 

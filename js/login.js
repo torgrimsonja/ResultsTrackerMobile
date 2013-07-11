@@ -23,7 +23,7 @@ function auth(uname, pword){
 				$.mobile.pushStateEnabled = true;
 				$('#login-landing').dialog('close');
 				$.mobile.pushStateEnabled = false; 
-				listCourses(); 											//insert magic algorithm
+				if($('#courses').html().length == 0) listCourses(); 											//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
 			}
@@ -44,7 +44,7 @@ function reg(){
 	
 	var regPass1Validated = /(.{6,3000}) | (.)/.exec($('#regPass1').val()); 
 	if(regPass1Validated !== null && regPass1Validated[0] === regPass1Validated.input){
-		if(regPass1Validated[0] === $('#regPass2').val()) console.log("password valid and matching");
+		if(regPass1Validated[0] === $('#regPass2').val()) ("password valid and matching");
 		else { $('#regPasswordError').text("Passwords do not match."); valid = false; }
 	}
 	else { $('#regPasswordError').text("Invalid password. Passwords must be 6 to 32 characters long."); valid = false; }

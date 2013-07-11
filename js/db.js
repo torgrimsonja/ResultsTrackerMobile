@@ -188,24 +188,23 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		}); 
 	}
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
-		var returned = false,
-		keyvalue = this.getArgs(data); 
-		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		var keyvalue = this.getArgs(data); 
+		qs.addQuery("SELECT DISTINCT `student_id`, `rem_id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
 				for(var i=0; i<data.course_student.length; i++){
-					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
-					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
+					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `rem_id` FROM `student` WHERE `rem_id` = '"+data.course_student[i].student_id+"'", "student");
+					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].rem_id+"'", "course_student_task_attempt"); 
 				}
 			}
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
 					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `rem_id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
 					}
 				} 
 				qs.triggerStack(function(data){
-					if(!returned){ call(data, 'local'); returned = true; }; 
+					call(data, 'local');
 				});
 			});
 		});
@@ -220,11 +219,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	else if(data.search("requested=examineStudent") > -1){
 		var keyvalue = this.getArgs(data),
 		returned = false; 
-		qs.addQuery("SELECT DISTINCT `course_id`, `id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
+		qs.addQuery("SELECT DISTINCT `course_id`, `rem_id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			for(var i=0; i<data.course_student.length; i++){
-				qs.addQuery("SELECT `name` FROM `course` WHERE `id` ='"+data.course_student[i].course_id+"'", "course");
-				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].id+"'", "course_student_task_attempt");
+				qs.addQuery("SELECT `name` FROM `course` WHERE `rem_id` ='"+data.course_student[i].course_id+"'", "course");
+				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].rem_id+"'", "course_student_task_attempt");
 			}
 			
 			qs.triggerStack(function(data){
