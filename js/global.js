@@ -6,49 +6,67 @@ c = 299792458, // m/s
 user = {authed: false, username: null, passHash: null, verifiedId: false},
 db, isPhoneGap = false; 
 
-function onLoad(){
-	console.log("onload fired, binding...");
-	$(document).one("deviceready", function(e){onStartUp();});
-	$(document).one("databaseready", function(e){checkId();});
-	setTimeout(function(){
-		if(!isPhoneGap){
-			fixJquery();
-			db = new resultsDatabase();
+
+var start = {
+	onLoad : function() {
+		console.log("onload fired, binding...");
+		
+		$(document).one('databaseready', checkId);
+		
+		if (navHas('Android')) {
+			//on Android platform with PhoneGap
+			//TODO: include Android version of cordova.js & SQLitePlugin.js	
+			/*
+			 * Note: yeah, I did a little more research, and they are different!
+			 * This is a pretty good solution to the problem, though.
+			 * Plus, no more waiting 5 seconds for browsers!
+			 *
+			 */
+			 this.phoneGapInit();
+		} else if (navHas('iPhone') || navHas('iPod') || navHas('iPad')) {
+			//on iOS platform with PhoneGap
+			//TODO: include iOS version of cordova.js & SQLitePlugin.js	
+			this.phoneGapInit();
+		} else {
+			setTimeout(this.onStartUp, 50);	
+		}
+		
+		function navHas(string) {
+			return (navigator.userAgent.indexOf(string) > -1) ? true : false;	
+		}
+	},
+	fixjQuery : function() {
+		$.mobile.loader.prototype.options.text = "Loading...";
+		$.mobile.loader.prototype.options.textVisible = false;
+		$.mobile.loader.prototype.options.theme = "a";
+		$.mobile.loader.prototype.options.html = "";
+		$.support.cors = true;
+		$.mobile.allowCrossDomainPages = true; 
+		$.mobile.defaultPageTransition = 'slide'; 		
+	},
+	phoneGapInit : function() {
+		isPhoneGap = true; 
+		$(document).one('deviceready', onStartUp);
+	},
+	onStartUp : function() {
+		try {
+			//Global initialization functions here
+			start.fixjQuery();
+			db = new resultsDatabase(); 
 			db.initDb();
 		}
-	}, 50); 
-}
-
-
-function fixJquery(){
-	$.mobile.loader.prototype.options.text = "Loading...";
-	$.mobile.loader.prototype.options.textVisible = false;
-	$.mobile.loader.prototype.options.theme = "a";
-	$.mobile.loader.prototype.options.html = "";
-	$.support.cors = true;
-	$.mobile.allowCrossDomainPages = true; 
-	$.mobile.defaultPageTransition = 'slide'; 
-}
-
-
-function onStartUp(){
-	isPhoneGap = true; 
-	try {
-		//Global initialization functions here
-		fixJquery();
-		db = new resultsDatabase(); 
-		db.initDb();
+		 catch(e) {
+			console.log(e.message); 
+		}		
 	}
-	 catch(e) {
-		console.log(e.message); 
-	}
-}
+};
+
 /**
  * Detects the mobile device being used.
  */
 function detectDevice(){
 	if(isPhoneGap) return device.model + ' ' + device.platform + ' ' + device.version; //ex: 'iPhone5,1 iOS 5.1.1', 'NexusOne Android 4.2'
-	else return 'browser or something'; 
+	else return navigator.userAgent;
 }
 
 /**
