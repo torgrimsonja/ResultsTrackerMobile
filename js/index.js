@@ -5,7 +5,6 @@ var courseToLoad;
  * Triggers the ajax call to return the course data. 
  */
 function listCourses(){
-	console.log("listing courses");
 	genericAjax(asyncListCourses, 'requested=coursename', 'admin/mobileAjaxGate.php'); 
 }
 
@@ -15,7 +14,6 @@ function listCourses(){
  * @param {string} type - A legacy parameter to differ between data from the master server and data from the local database. 
  */ 
 function asyncListCourses(response, type){
-	console.log("responding?");
 	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 
 		$("#courses").append($('<input type="button" style="height: 200px; width: 100%;" value="SYNC by Nathan Eliason" />').on('click', function() {
@@ -23,7 +21,7 @@ function asyncListCourses(response, type){
 		}));
 		var i=-1;
 		for(var i=0; i<response["name"].length; i++){
-			var id=response.name[i].rem_id;
+			var id=response.name[i].id;
 			var name = response.name[i].name; 
 			//The fancy classes are to trick jquery mobile css into giving it the smooth button treatment
 			//Normally these classes are auto-applied, but when generated post-pageload one has to do it all himself

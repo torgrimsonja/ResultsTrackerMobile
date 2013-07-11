@@ -17,7 +17,7 @@ function onLoad(){
 			db = new resultsDatabase();
 			db.initDb();
 			if(!user.authed) 
-				$('#openLogin').click();
+				$('#openLogin').click(); 
 		}
 	}, 50); 
 }

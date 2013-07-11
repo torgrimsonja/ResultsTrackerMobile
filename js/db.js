@@ -46,7 +46,6 @@ resultsDatabase.prototype.checkIfLoaded = function(download){
 		tx.executeSql("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1",[],function(tx, res){
 			if(res.rows && res.rows.length){ 
 				tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, result){
-					console.log("thing");
 					if(result.rows != undefined && result.rows.length > 0){
 						ref.complete = true;
 						$(document).trigger("databaseready"); 
@@ -165,18 +164,20 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	}
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
 		var keyvalue = this.getArgs(data); 
-		qs.addQuery("SELECT DISTINCT `student_id`, `rem_id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		console.log(data);
+		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		console.log("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
 				for(var i=0; i<data.course_student.length; i++){
-					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `rem_id` FROM `student` WHERE `rem_id` = '"+data.course_student[i].student_id+"'", "student");
-					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].rem_id+"'", "course_student_task_attempt"); 
+					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
+					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 				}
 			}
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
 					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `rem_id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
 					}
 				} 
 				qs.triggerStack(function(data){

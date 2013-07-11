@@ -90,3 +90,9 @@ function registrationSuccess(){
 		$('#register').dialog('close');
 	}, 2000);
 }
+
+function logOut(){
+	if(user.authed) db.localQuery("logout", function(data){
+		$('#openLogin').click();
+	});
+}
