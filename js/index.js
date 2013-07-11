@@ -1,6 +1,7 @@
 $(function(){
 	if(!user.authed) //$.mobile.changePage('login.html'); 
 		$('#openLogin').click();
+	else db.checkIfLoaded(true);
 });
 
 var courseToLoad; 
@@ -41,18 +42,3 @@ function asyncListCourses(response, type){
 	}
 }
 
-function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync, changes, callback) {
-	console.log('user.username: ' + JSON.stringify(user.username));
-	console.log('user.passHash: ' + JSON.stringify(user.passHash));
-	$.post(REMOTE_PATH + 'mobile_app/sync.php', {
-		'username' 	: user.username,
-		'password'	: user.passHash,
-		'last_sync'	: last_sync,
-		'changes'	: changes, 
-		'timestamp'	: new Date().getTime() 
-	}, function(successData) {
-		callback(successData);
-	}).error(function(error) {
-		console.log(':(');
-	});
-}
