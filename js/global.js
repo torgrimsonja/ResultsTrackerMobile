@@ -102,8 +102,8 @@ function reactToId(exists){
 			$.mobile.changePage('index.html');
 			$('#courses').html('');
 			user.authed = true;
-			user.username = data.username;
-			user.passHash = data.passHash; 
+			user.username = data.username[0].prop_value;
+			user.passHash = data.passHash[0].prop_value;
 			if($('#courses').html().length == 0) listCourses();
 		}
 	});

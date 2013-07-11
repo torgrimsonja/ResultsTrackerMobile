@@ -74,6 +74,8 @@ function createStudentView(response, type){
 				} 
 			}
 			$('#students').trigger("create"); 
+			$('#course-landing-content').append($('<input type="button" value="Start New Task" />').on("click", function(){ $.mobile.changePage('attempt.html'); }));
+			$('#course-landing-content').trigger("create");
 		}  
 		
 	} else {

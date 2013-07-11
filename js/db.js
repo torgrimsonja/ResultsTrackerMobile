@@ -42,7 +42,6 @@ resultsDatabase.prototype.checkIfLoaded = function(){
 	console.log("Checking if database exists...");
 	resultsDatabase.db.transaction(function(tx){
 		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, res){
-			console.log("result: "+res);
 			if(res.rows && res.rows.length){ 
 				ref.complete = true;
 				$(document).trigger("databaseready"); 
