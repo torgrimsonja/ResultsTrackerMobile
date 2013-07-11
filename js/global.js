@@ -107,7 +107,7 @@ function reactToId(exists){
 			user.authed = true;
 			user.username = data.username[0].prop_value;
 			user.passHash = data.passHash[0].prop_value;
-			if($('#courses').html().length == 0) listCourses();
+			listCourses();
 		}
 	});
 	else {
