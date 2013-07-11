@@ -20,6 +20,9 @@ function listCourses(){
 function asyncListCourses(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 
+		$("#courses").append($('<input type="button" style="height: 200px; width: 100%;" value="SYNC" />').on('click', function() {
+			syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames();
+		}));
 		var i=-1;
 		for(var i=0; i<response["name"].length; i++){
 			var id=response.name[i].rem_id;
@@ -36,4 +39,18 @@ function asyncListCourses(response, type){
 			}));	
 		}
 	}
+}
+
+function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames() {
+	$.post(REMOTE_PATH + 'mobile_app/sync.php', {
+		'username' 	: user.username,
+		'password'	: user.passHash,
+		'last_sync'	: 0,
+		'changes'	: '{}', 
+		'timestamp'	: new Date().getTime() 
+	}, function(successData) {
+		console.log('Yaay! Response: ' + JSON.stringify(successData));
+	}).error(function(error) {
+		console.log(':(');
+	});
 }
