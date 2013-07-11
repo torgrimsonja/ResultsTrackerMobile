@@ -1,8 +1,3 @@
-$(function(){
-	if(!user.authed) //$.mobile.changePage('login.html'); 
-		$('#openLogin').click();
-	else db.checkIfLoaded(true);
-});
 
 var courseToLoad; 
 
@@ -26,7 +21,7 @@ function asyncListCourses(response, type){
 		}));
 		var i=-1;
 		for(var i=0; i<response["name"].length; i++){
-			var id=response.name[i].rem_id;
+			var id=response.name[i].id;
 			var name = response.name[i].name; 
 			//The fancy classes are to trick jquery mobile css into giving it the smooth button treatment
 			//Normally these classes are auto-applied, but when generated post-pageload one has to do it all himself

@@ -6,6 +6,7 @@ c = 299792458, // m/s
 user = {authed: false, username: null, passHash: null, verifiedId: false},
 db, isPhoneGap = false; 
 
+<<<<<<< HEAD
 
 var start = {
 	onLoad : function() {
@@ -53,7 +54,20 @@ var start = {
 			//Global initialization functions here
 			start.fixjQuery();
 			db = new resultsDatabase(); 
+=======
+function onLoad(){
+	console.log("onload fired, binding...");
+	$(document).one("deviceready", function(e){onStartUp();});
+	$(document).one("databaseready", function(e){checkId();});
+	
+	setTimeout(function(){
+		if(!isPhoneGap){
+			fixJquery();
+			db = new resultsDatabase();
+>>>>>>> aac065b410813a5378072e6cac4653a73e0af9e3
 			db.initDb();
+			if(!user.authed) 
+				$('#openLogin').click(); 
 		}
 		 catch(e) {
 			console.log(e.message); 
@@ -122,7 +136,7 @@ function reactToId(exists){
 			user.authed = true;
 			user.username = data.username[0].prop_value;
 			user.passHash = data.passHash[0].prop_value;
-			if($('#courses').html().length == 0) listCourses();
+			listCourses();
 		}
 	});
 	else {

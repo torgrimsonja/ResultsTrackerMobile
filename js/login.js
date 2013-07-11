@@ -20,10 +20,11 @@ function auth(uname, pword){
 			else { 
 				user.passHash = hex_sha1(pword); 
 				user.username = uname; 
+				db.checkIfLoaded(true); 
 				$.mobile.pushStateEnabled = true;
 				$('#login-landing').dialog('close');
 				$.mobile.pushStateEnabled = false; 
-				if($('#courses').html().length == 0) listCourses(); 											//insert magic algorithm
+															//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
 			}
@@ -88,4 +89,10 @@ function registrationSuccess(){
 	setTimeout(function(){
 		$('#register').dialog('close');
 	}, 2000);
+}
+
+function logOut(){
+	if(user.authed) db.localQuery("logout", function(data){
+		$('#openLogin').click();
+	});
 }

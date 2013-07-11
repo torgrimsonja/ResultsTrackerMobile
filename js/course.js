@@ -43,7 +43,7 @@ function createStudentView(response, type){
 			var toAppend = ''; 
 			for(var i=0; i<response.student.length; i++){
 				if(response.student[i].firstName != undefined){
-					toAppend += '<tr><th class="students" data-studId="'+response.student[i].rem_id+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
+					toAppend += '<tr><th class="students" data-studId="'+response.student[i].id+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
 					for(var j=0; j<taskCount; j++){
 							toAppend += '<td class="emptyCell" data-columnNum="'+j+'"></td>'; 
 						}

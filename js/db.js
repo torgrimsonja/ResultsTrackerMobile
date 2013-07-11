@@ -31,25 +31,34 @@ resultsDatabase.prototype.initDb = function(){
 		}
 	}
 	
-	this.checkIfLoaded();
+	this.query("CREATE TABLE IF NOT EXISTS `device`(`rem_id` varchar(255), `prop_name` varchar(255), `prop_value` varchar(255))", function(){}); 
+	
+	this.checkIfLoaded(false);
 }
 /**
  * Checks if the database is loaded by selecting a specific row. If it isn't loaded, this function will initiate the sync. 
  */ 
 
-resultsDatabase.prototype.checkIfLoaded = function(){
+resultsDatabase.prototype.checkIfLoaded = function(download){
 	var ref = this; 
 	console.log("Checking if database exists...");
 	resultsDatabase.db.transaction(function(tx){
-		tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, res){
+		tx.executeSql("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1",[],function(tx, res){
 			if(res.rows && res.rows.length){ 
-				ref.complete = true;
-				$(document).trigger("databaseready"); 
+				tx.executeSql("SELECT * FROM `task_type` WHERE 1 LIMIT 1",[],function(tx, result){
+					if(result.rows != undefined && result.rows.length > 0){
+						ref.complete = true;
+						$(document).trigger("databaseready"); 
+					} else ref.downloadServer();
+				});
+			} else {
+				console.log("does not exist.");
+				if(download)ref.downloadServer(); 
 			}
 		});
 	}, function(e){
 		console.log("does not exist.");
-		ref.downloadServer(); 
+		if(download)ref.downloadServer(); 
 	});
 }
 
@@ -58,6 +67,8 @@ resultsDatabase.prototype.checkIfLoaded = function(){
  */
 
 resultsDatabase.prototype.downloadServer = function(){
+	console.log("downloading db...");
+	var ref = this; 
 	$('body').append($('<div id="clickBlocker"></div>'));
 	$.mobile.loading( "show", {
 		text: "Syncing database...",
@@ -65,15 +76,7 @@ resultsDatabase.prototype.downloadServer = function(){
 		theme: "c",
 		html: ""
 	});
-	var ref = this;
-	$.ajax({
-		url: REMOTE_PATH + 'mobile_app/sync.php', 
-		success: function(data, status, jqXHR){
-			ref.syncResponse(jqXHR.responseText); 
-		},
-		type: 'POST',
-		data: 'requested=replicateDb'
-	});	
+	syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(0, '[]', this.syncResponse); 
 }
 
 /**
@@ -83,10 +86,9 @@ resultsDatabase.prototype.downloadServer = function(){
 
 resultsDatabase.prototype.syncResponse = function(response){
 	var qz = new queryStack(this); 
-	response = $.parseJSON(unescape(response));
 	if(!response.error){ //TODO: pull table structure from server
 		for(var prop in response){
-			if(response.hasOwnProp(prop)){
+			if(response.hasOwnProperty(prop)){
 				var tableArr = []; 
 				for(var k=0; k<response[prop][0].length; k++){
 					tableArr.push('`'+escapeSqlString(response[prop][0][k])+'` varchar(255)'); 
@@ -95,60 +97,14 @@ resultsDatabase.prototype.syncResponse = function(response){
 				for(var j=1; j<response[prop].length; j++){
 					var valueArr = []; 
 					for(var vProp in response[prop][j]){
-						valueArr.push("'"+escapeSqlString(vProp)+"'");
+						valueArr.push("'"+escapeSqlString(response[prop][j][vProp])+"'");
 					}
 					qz.addQuery("INSERT INTO `"+prop+"` VALUES ("+valueArr.join(', ')+")");
 				}				
 			}
 		}
 		
-		/*
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `course`(`rem_id` , `user_id`, `name`, `active`, `timestamp`)", defaultCallback); 
-		for(var i=0; i<response.course.length; i++){
-			qz.addQuery("INSERT INTO `course`(`rem_id`,`name`,`active`,`timestamp`, `user_id`) VALUES ('"+response.course[i].id+"', '"+response.course[i].name+"', '"+response.course[i].active+"', '"+response.course[i].timestamp+"', '"+response.course[i].user_id+
-			"')", defaultCallback);// WHERE NOT EXISTS (SELECT * FROM `course` WHERE `name` = '"+response.course[i].name+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `course_student` ( `rem_id` , `student_id`, `course_id`, `timestamp`)", defaultCallback);  
-		for(var i=0; i<response.course_student.length; i++){
-			qz.addQuery("INSERT INTO `course_student` (`rem_id` , `student_id`, `course_id`, `timestamp`) VALUES ('"+response.course_student[i].id+"', '"+response.course_student[i].student_id+
-			"', '"+response.course_student[i].course_id+"', '"+response.course_student[i].timestamp+
-			"')", defaultCallback); //WHERE NOT EXISTS (SELECT * FROM `course_student` WHERE `id` = '"+response.course_student[i].id+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `student` (`rem_id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`)", defaultCallback);  
-		for(var i=0; i<response.student.length; i++){
-			qz.addQuery("INSERT INTO `student`( `rem_id` , `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`) VALUES ('"+response.student[i].id+"', '"+response.student[i].firstName+
-			"', '"+response.student[i].lastName+"', '"+response.student[i].gender+"', '"+response.student[i].dateOfBirth+"', '"+response.student[i].code+
-			"')", defaultCallback); //WHERE NOT EXISTS (SELECT * FROM `student` WHERE `id` = '"+response.student[i].id+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `task` (`rem_id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`)", defaultCallback);
-		for(var i=0; i<response.task.length; i++){
-			qz.addQuery("INSERT INTO `task`(`rem_id` , `type_id`, `operator`, `name`, `description`, `value`, `timestamp`, `age`, `gender`) VALUES ('"+response.task[i].id+"', '"+response.task[i].type_id+
-			"', '"+response.task[i].operator+"', '"+response.task[i].name+"', '"+response.task[i].description+"', '"+response.task[i].value+"', '"+response.task[i].timestamp+"', '"+response.task[i].age+"', '"+response.task[i].gender+
-			"')", defaultCallback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `course_student_task_attempt` (`rem_id`, `course_student_id`, `task_id`, `value`, `timestamp`)", defaultCallback);
-		for(var i=0; i<response.course_student_task_attempt.length; i++){
-			qz.addQuery("INSERT INTO `course_student_task_attempt`(`rem_id`, `course_student_id`, `task_id`, `value`, `timestamp`) VALUES ('"+response.course_student_task_attempt[i].id+"', '"+response.course_student_task_attempt[i].course_student_id+
-			"', '"+response.course_student_task_attempt[i].task_id+"', '"+response.course_student_task_attempt[i].value+"', '"+response.course_student_task_attempt[i].timestamp+
-			"')", defaultCallback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `task_type` (`rem_id`, `name`, `timestamp`)", defaultCallback); 
-		for(var i=0; i<response.task_type.length; i++){
-			qz.addQuery("INSERT INTO `task_type`(`rem_id`, `name`, `timestamp`) VALUES ('"+response.task_type[i].id+"', '"+response.task_type[i].name+
-			"', '"+response.task_type[i].timestamp+
-			"')", defaultCallback); //WHERE NOT EXISTS (SELECT * FROM `task` WHERE `id` = '"+response.task[i].id+"')", callback);
-		}
-		
-		qz.addQuery("CREATE TABLE IF NOT EXISTS `device` (`rem_id`, `prop_name`, `prop_value`)", defaultCallback);
-		qz.addQuery("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('last_sync', '"+new Date().getTime()+"')", defaultCallback); 
-		*/
 		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); });
-		//this.dumpDbInConsole();
 	}
 }
 
@@ -199,25 +155,29 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	var ref = this; //I keep this reference around to use prototype methods deeper in
 	var qs = new queryStack(this);
 	if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
-		qs.addQuery("SELECT DISTINCT `name`, `rem_id` FROM `course` WHERE 1", "name");
+		qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", "name");
+		console.log("running course query");
 		qs.triggerStack(function(data){
+			console.log("triggered");
 			call(data, 'local');
 		}); 
 	}
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
 		var keyvalue = this.getArgs(data); 
-		qs.addQuery("SELECT DISTINCT `student_id`, `rem_id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		console.log(data);
+		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
+		console.log("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
 				for(var i=0; i<data.course_student.length; i++){
-					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `rem_id` FROM `student` WHERE `rem_id` = '"+data.course_student[i].student_id+"'", "student");
-					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].rem_id+"'", "course_student_task_attempt"); 
+					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
+					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 				}
 			}
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
 					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `rem_id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
 					}
 				} 
 				qs.triggerStack(function(data){
@@ -343,7 +303,7 @@ queryStack.prototype.triggerStack = function(onFinish){
 
 queryStack.prototype.nextQuery = function(index, onFinish){
 	if(this.stack[index] != undefined){
-		this.db.query(this.stack[index].q, {callback: qCallback, context: this, identifier: this.stack[index].identifier, onFinish: onFinish});
+		db.query(this.stack[index].q, {callback: qCallback, context: this, identifier: this.stack[index].identifier, onFinish: onFinish});
 		this.nextQuery(index+1, onFinish); 
 	}
 	try{ if(this.stack == undefined || !(this.stack.length>0)) onFinish(this.data); } catch(e){} //this is used when a querystack is triggered with no queries
