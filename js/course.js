@@ -11,7 +11,6 @@ var taskCount = 0;
  * @param {boolean/object} response - Call with 'false' to trigger the ajax. On callback, this is an object. 
  */ 
 function initializeTable(response){
-	console.log(response);
 	if(response){
 		if(!response.error){
 			var i=-1;

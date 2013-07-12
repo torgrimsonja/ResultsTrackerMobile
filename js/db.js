@@ -9,7 +9,7 @@ var resultsDatabase = function() {
 
 /**
  * Initialize the local database, and check if it is filled with data already (the actual checking takes place in another function). 
- * @param {int} size - Ignored if above 5MB, specifies database size 
+ * 
  */ 
 
 resultsDatabase.prototype.initDb = function(){
@@ -37,6 +37,7 @@ resultsDatabase.prototype.initDb = function(){
 }
 /**
  * Checks if the database is loaded by selecting a specific row. If it isn't loaded, this function will initiate the sync. 
+ * @param {boolean} download - Whether to start a full download of the database if it doesn't exist. 
  */ 
 
 resultsDatabase.prototype.checkIfLoaded = function(download){
@@ -63,7 +64,7 @@ resultsDatabase.prototype.checkIfLoaded = function(download){
 }
 
 /**
- * Downloads all the SQL data needed from the master mySql server. 
+ * Downloads all the SQL data needed from the master mySql server. To be used only on the initial sync. 
  */
 
 resultsDatabase.prototype.downloadServer = function(){
@@ -156,17 +157,13 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	var qs = new queryStack(this);
 	if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
 		qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", "name");
-		console.log("running course query");
 		qs.triggerStack(function(data){
-			console.log("triggered");
 			call(data, 'local');
 		}); 
 	}
 	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
 		var keyvalue = this.getArgs(data); 
-		console.log(data);
 		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
-		console.log("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
 		qs.triggerStack(function(data){
 			if(data.course_student != undefined){
 				for(var i=0; i<data.course_student.length; i++){
@@ -227,8 +224,13 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	}
 	
 	else if (data.search("requested=insertNewAttempt") > -1){
-		var keyvalue = this.getArgs(data); 
-		//qs.addQuery("SELECT 
+		console.log(data)
+		var keyvalue = this.getArgs(data),
+		studentName = keyvalue[0].value,
+		value = keyvalue[1].value,
+		taskname = keyvalue[2].value;
+		
+		
 	}
 }
 
