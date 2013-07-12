@@ -42,7 +42,7 @@ function getPage(taskname, students, type){
 	.append($('<h1>'+taskname+'<h1>'));
 	for(var i=0; i<students.student.length; i++){
 		toRet.append($('<div class="studentInput"><span class="studentName">'+students.student[i].firstName+' '+students.student[i].lastName+'</span>'+getInput(type)+'</div>'));
-	} return toRet.append($('<input type="button" onclick="storeData($(this), \''+taskname+'\')" value="Save"/>')); 
+	} return toRet.append($('<input type="button" onclick="storeData($(this), \''+taskname+'\', \''+type+'\')" value="Save"/>')); 
 }
 
 /**
@@ -63,27 +63,47 @@ function getInput(type){
  * @param {String} taskname - The name of the task being attempted. 
  */ 
 
-function storeData(el, taskname){
+function storeData(el, taskname, type){
 	var values = []; 
 	el.parents('.attemptHeader').find('input[type|="number"]').each(function(){
 		var inputtedValue = $(this).val();
-		if(parseInt(inputtedValue) > -1) values.push(inputtedValue, $(this).parent().parent().children('.studentName').html());
+		if(inputtedValue.length > 0) values.push([inputtedValue, $(this).parent().parent().children('.studentName').html(), $(this)]);
 	});
-	el.attr("value","Saving...").css("background-color","#CCFFCC");
-	el.prev().children('span').html("Saving...");
-	var countAttemptsLogged = 0; 
-	for(var i=0; i<values.length; i++){
-		db.localQuery("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname, function(){
-			countAttemptsLogged++;
-			if(countAttemptsLogged >= values.length){
-				el.attr("value","Saved!").css("background-color","green");
-				el.prev().children('span').html("Saved!");
-				setTimeout(function(){
-					el.attr("value","Save").css("background-color","");
-					el.prev().children('span').html("Save");
-				}, 2000); 
-			}
-		});
-	}
 	
+	var validated = validateInput(values, type); 
+	
+	if(values.length > 0 && validated){
+		el.attr("value","Saving...").css("background-color","#CCFFCC");
+		el.prev().children('span').html("Saving...");
+		var countAttemptsLogged = 0; 
+		for(var i=0; i<values.length; i++){
+			db.localQuery("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname, function(){
+				countAttemptsLogged++;
+				if(countAttemptsLogged >= values.length){
+					el.attr("value","Saved!").css("background-color","green");
+					el.prev().children('span').html("Saved!");
+					setTimeout(function(){
+						el.attr("value","Save").css("background-color","");
+						el.prev().children('span').html("Save");
+					}, 2000); 
+				}
+			});
+		}
+	}
+}
+
+function validateInput(values, type){
+	console.log(values);
+	var allValid = true; 
+	for(var i=0; i<values.length; i++){
+		if(type == 'reps' && !(/^[0-9]+$/.test(values[i][0]))){
+			console.log($(values[i][2]));
+			$(values[i][2]).attr("value","").attr("placeholder","That input was invalid! Number only please.");
+			allValid = false; 
+		} else if(type == 'timed' && !(/^[0-9][0-9]:[0-9][0-9]/.test(values[i][0]))){
+			console.log($(values[i][2]).val());
+			$(values[i][2]).val("").attr("placeholder","That input was invalid! A time should look like: 10:15 (minute, second)").addClass("placeholderError");
+			allValid = false; 
+		}
+	} return allValid; 
 }

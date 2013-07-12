@@ -224,13 +224,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	}
 	
 	else if (data.search("requested=insertNewAttempt") > -1){
-		console.log(data)
 		var keyvalue = this.getArgs(data),
 		studentName = keyvalue[0].value,
 		value = keyvalue[1].value,
 		taskname = keyvalue[2].value;
-		
-		
+		console.log(studentName, value, taskname);
 	}
 }
 

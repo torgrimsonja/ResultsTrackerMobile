@@ -12,3 +12,19 @@
 	position: relative;
 	z-index: 100; 
 }
+
+input.placeHolderError::-webkit-input-placeholder {
+   color: red;
+}
+
+input.placeHolderError:-moz-placeholder.placeHolderError {
+   color: red;  
+}
+
+input.placeHolderError::-moz-placeholder.placeHolderError { 
+   color: red;  
+}
+
+input.placeHolderError:-ms-input-placeholder.placeHolderError {  
+   color: red;  
+}
