@@ -6,8 +6,6 @@ c = 299792458, // m/s
 user = {authed: false, username: null, passHash: null, verifiedId: false},
 db, isPhoneGap = false; 
 
-<<<<<<< HEAD
-
 var start = {
 	onLoad : function() {
 		console.log("onload fired, binding...");
@@ -54,17 +52,6 @@ var start = {
 			//Global initialization functions here
 			start.fixjQuery();
 			db = new resultsDatabase(); 
-=======
-function onLoad(){
-	console.log("onload fired, binding...");
-	$(document).one("deviceready", function(e){onStartUp();});
-	$(document).one("databaseready", function(e){checkId();});
-	
-	setTimeout(function(){
-		if(!isPhoneGap){
-			fixJquery();
-			db = new resultsDatabase();
->>>>>>> aac065b410813a5378072e6cac4653a73e0af9e3
 			db.initDb();
 			if(!user.authed) 
 				$('#openLogin').click(); 
