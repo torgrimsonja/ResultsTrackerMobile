@@ -3,6 +3,7 @@
 *	Todo created 
 *	Github accessed
 *	Strategization
+*	Some coding w/Nathan
 
 <h3>Thursday, July 4</h3> 
 
@@ -34,3 +35,8 @@
 *	More Android debugging 
 *	Dialog bug fixed
 *	Auto-downloading database configured
+
+<h3>Thursday, July 11</h3> 
+
+*	Database syncing configured
+*	New task attempt page created
