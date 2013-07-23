@@ -16,9 +16,6 @@ function listCourses(){
 function asyncListCourses(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(!response.error){ 
-		$("#courses").append($('<input type="button" style="height: 200px; width: 100%;" value="SYNC by Nathan Eliason" />').on('click', function() {
-			syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames();
-		}));
 		var i=-1;
 		for(var i=0; i<response["name"].length; i++){
 			var id=response.name[i].id;

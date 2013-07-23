@@ -52,8 +52,8 @@ function getPage(taskname, students, type){
  */ 
 
 function getInput(type){
-	if(type == 'timed') return '<input type="number" pattern="[0-9][0-9]:[0-9[0-9]" placeholder="00:00" />';
-	if(type == 'reps') return '<input type="number" pattern="[0-9]+" placeholder="0" />'; 
+	if(type == 'timed') return '<input type="text" pattern="[0-9][0-9]:[0-9[0-9]" placeholder="00:00" data-box="boxToSave" />';
+	if(type == 'reps') return '<input type="number" pattern="[0-9]+" placeholder="0" data-box="boxToSave" />'; 
 }
 
 /** 
@@ -65,7 +65,7 @@ function getInput(type){
 
 function storeData(el, taskname, type){
 	var values = []; 
-	el.parents('.attemptHeader').find('input[type|="number"]').each(function(){
+	el.parents('.attemptHeader').find('input[data-box|="boxToSave"]').each(function(){
 		var inputtedValue = $(this).val();
 		if(inputtedValue.length > 0) values.push([inputtedValue, $(this).parent().parent().children('.studentName').html(), $(this)]);
 	});
@@ -77,9 +77,17 @@ function storeData(el, taskname, type){
 		el.prev().children('span').html("Saving...");
 		var countAttemptsLogged = 0; 
 		for(var i=0; i<values.length; i++){
-			db.localQuery("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname, function(){
+			db.localQuery("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname+"&course="+courseToLoad, function(data){
 				countAttemptsLogged++;
-				if(countAttemptsLogged >= values.length){
+				if(data.error){
+					el.attr("value","Saved!").css("background-color","red");
+					el.prev().children('span').html("Error");
+					setTimeout(function(){
+						el.attr("value","Save").css("background-color","");
+						el.prev().children('span').html("Save");
+					}, 2000); 
+					if(data.comments) alert(data.comments);
+				} else if(countAttemptsLogged >= values.length){
 					el.attr("value","Saved!").css("background-color","green");
 					el.prev().children('span').html("Saved!");
 					setTimeout(function(){
@@ -87,6 +95,8 @@ function storeData(el, taskname, type){
 						el.prev().children('span').html("Save");
 					}, 2000); 
 				}
+				
+				
 			});
 		}
 	}
@@ -100,7 +110,7 @@ function validateInput(values, type){
 			console.log($(values[i][2]));
 			$(values[i][2]).attr("value","").attr("placeholder","That input was invalid! Number only please.");
 			allValid = false; 
-		} else if(type == 'timed' && !(/^[0-9][0-9]:[0-9][0-9]/.test(values[i][0]))){
+		} else if(type == 'timed' && !(/^[0-9]?[0-9]:[0-9][0-9]$/.test(values[i][0]))){
 			console.log($(values[i][2]).val());
 			$(values[i][2]).val("").attr("placeholder","That input was invalid! A time should look like: 10:15 (minute, second)").addClass("placeholderError");
 			allValid = false; 

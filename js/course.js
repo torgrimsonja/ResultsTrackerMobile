@@ -42,7 +42,11 @@ function createStudentView(response, type){
 			var toAppend = ''; 
 			for(var i=0; i<response.student.length; i++){
 				if(response.student[i].firstName != undefined){
-					toAppend += '<tr><th class="students" data-studId="'+response.student[i].id+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
+				var courseStudentId;
+				for(var j=0; j<response.course_student.length; j++){
+					if(response.course_student[j].student_id == response.student[i].id) courseStudentId = response.course_student[j].id;
+				}
+					toAppend += '<tr><th class="students" data-studId="'+courseStudentId+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
 					for(var j=0; j<taskCount; j++){
 							toAppend += '<td class="emptyCell" data-columnNum="'+j+'"></td>'; 
 						}
@@ -71,6 +75,13 @@ function createStudentView(response, type){
 							$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
 						}
 					});
+					
+					$('.cell').each(function(){
+						if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
+							if((thisTask.operator == "min" && parseFloat(thisAttempt.value) > parseFloat($(this).children('p').html())) || (thisTask.operator == "max" && secondsFromTime(thisAttempt.value) < secondsFromTime($(this).children('p').html()))) 
+								$(this).html('<p>'+thisAttempt.value+'</p>').css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
+						}
+					});
 				} 
 			}
 			$('#students').trigger("create"); 
@@ -79,9 +90,12 @@ function createStudentView(response, type){
 		}  
 		
 	} else {
-
 		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 
 	}
+}
+
+function secondsFromTime(timeStr){
+	return (parseInt(timeStr.substring(0,2)) * 60) + parseInt(timeStr.substring(3,5));
 }
 
 /**

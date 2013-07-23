@@ -79,9 +79,7 @@ var start = {
 		//Global initialization functions here
 		start.fixjQuery();
 		db = new resultsDatabase(); 
-		db.initDb();
-		if(!user.authed) //TODO: There is no way the user can be verified here, so the login screen shows briefly every single time
-			$('#openLogin').click(); 		
+		db.initDb();	
 	}
 };
 
@@ -146,7 +144,7 @@ function checkId(){
  */
 
 function reactToId(exists){
-	if (exists) db.localQuery("auth", function(data){
+	if(exists) db.localQuery("auth", function(data){
 		if(data.username != undefined && data.passHash != undefined){
 			$.mobile.changePage('index.html');
 			$('#courses').html('');
@@ -154,6 +152,8 @@ function reactToId(exists){
 			user.username = data.username[0].prop_value;
 			user.passHash = data.passHash[0].prop_value;
 			listCourses();
+		} else {
+			$('#openLogin').click(); 
 		}
 	});
 	else {
@@ -212,5 +212,7 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 	});
 }
 
-
+function pad(str, max) {
+  return str.length < max ? pad("0" + str, max) : str;
+}
 

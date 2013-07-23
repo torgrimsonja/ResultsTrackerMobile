@@ -54,7 +54,12 @@ resultsDatabase.prototype.checkIfLoaded = function(download){
 				});
 			} else {
 				console.log("does not exist.");
-				if(download)ref.downloadServer(); 
+				if(download){
+					ref.downloadServer(); 
+					console.log("downloading now.");
+				} else {
+					console.log("not downloading."); $('#openLogin').click(); 
+				}
 			}
 		});
 	}, function(e){
@@ -174,7 +179,7 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			qs.triggerStack(function(data){
 				if(data.course_student_task_attempt != undefined){
 					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+						qs.addQuery("SELECT `name`, `operator`, `value`, `id` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
 					}
 				} 
 				qs.triggerStack(function(data){
@@ -225,12 +230,35 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	
 	else if (data.search("requested=insertNewAttempt") > -1){
 		var keyvalue = this.getArgs(data),
-		studentName = keyvalue[0].value,
+		studentName = keyvalue[0].value.split(' '),
 		value = keyvalue[1].value,
-		taskname = keyvalue[2].value;
-		console.log(studentName, value, taskname);
+		taskName = keyvalue[2].value,
+		courseId = keyvalue[3].value; 
+		qs.addQuery("SELECT `gender`, `dateOfBirth`, `id` FROM `student` WHERE `firstName` = '"+studentName[0]+"' AND `lastName` = '"+studentName[1]+"'", "studentData"); 
+		qs.triggerStack(function(data){
+			console.log(data);
+			qs.addQuery("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' LIMIT 1", "course_student_id");
+			qs.triggerStack(function(data){
+				qs.addQuery("SELECT cast(((SELECT julianday('now') - julianday('"+data.studentData[0].dateOfBirth+"'))/365) as int) AS yearsOld", "dateData");
+				qs.triggerStack(function(data){
+					qs.addQuery("SELECT `id`, `operator`, `value`  FROM `task` WHERE `name` = '"+taskName+"' AND `age` = '"+data.dateData[0].yearsOld+"' AND `gender` = '"+data.studentData[0].gender.toLowerCase()+"' LIMIT 1", "taskData");	
+					qs.triggerStack(function(data){
+						if(data.taskData != undefined){
+							var d = new Date(); 
+							qs.addQuery("INSERT INTO `course_student_task_attempt` (`id`,`course_student_id`,`task_id`,`value`,`timestamp`) VALUES "+
+								"((SELECT cast((SELECT MAX(`id`) FROM `course_student_task_attempt`) as int) + 1), '"+data.course_student_id[0].id+"', "+
+								"'"+data.taskData[0].id+"', '"+value+"', '"+d.getFullYear()+'-'+pad((d.getMonth()+1),2)+'-'+pad(d.getDate(),2)+' '+d.toTimeString().substring(0,8)+"')",'none'); 
+							qs.triggerStack(function(data){call(data);}); 
+						} else call({error: true, comments: 'The task "'+taskName+'" is not allowed for the student '+studentName[0]+' '+studentName[1]+'. Please check the Presidential Fitness standards.'});
+					});
+				});
+			});
+		});
 	}
 }
+/*
+SELECT `id` FROM `task` WHERE `name` = 'Curl-Ups / Min' AND `age` = (SELECT round((SELECT julianday('now') - julianday('1999-02-23'))/365)) AND `gender` = 'Male' 
+*/
 
 /**
  * Parses a key->value pair. 
