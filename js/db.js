@@ -4,7 +4,7 @@
  */
 
 var resultsDatabase = function() {
-	this.db, this.complete = false, this.createAsync = 0; 
+	this.db, this.complete = false, this.createAsync = 0, this.syncingTables = ['course','course_student','course_student_task_attempt','course_task','student','task','task_type'];
 }
 
 /**
@@ -92,7 +92,7 @@ resultsDatabase.prototype.downloadServer = function(){
 
 resultsDatabase.prototype.syncResponse = function(response){
 	var qz = new queryStack(this); 
-	if(!response.error){ //TODO: pull table structure from server
+	if(!response.error){
 		for(var prop in response){
 			if(response.hasOwnProperty(prop)){
 				var tableArr = []; 
@@ -109,10 +109,49 @@ resultsDatabase.prototype.syncResponse = function(response){
 				}				
 			}
 		}
-		
+		var d = new Date(); 
+		qz.addQuery("INSERT INTO `device` (`prop_name`,`prop_value`) VALUES ('last_sync', '"+buildTimeString()+"')",'none'); 
 		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); });
 	}
 }
+
+resultsDatabase.prototype.updateResponse = function(response){
+	var qz = new queryStack(this); 
+	if(!response.error){ 
+		for(var prop in response){
+			if(response.hasOwnProperty(prop)){
+				for(var j=1; j<response[prop].length; j++){
+					var valueArr = [], keyArr = []; 
+					for(var vProp in response[prop][j]){
+						valueArr.push("'"+escapeSqlString(response[prop][j][vProp])+"'");
+						keyArr.push(vProp); 
+					}
+					if(response[prop][j].hasOwnProperty('id')){
+						var rowId = response[prop][j].id, tableName = prop;
+						qz.addQuery("SELECT * FROM `"+prop+"` WHERE `id` = '"+response[prop][j].id+"'","idCheck");
+						qz.triggerStack(function(data){
+							if(data.hasOwnProperty("idCheck")){
+								delete data.idCheck;
+								var qStr = 'UPDATE `'+tableName+'` SET '; 
+								for(var i=0; i<keyArr.length; i++){
+									qStr += "`"+keyArr[i]+"` = "+valueArr[i]+", ";
+								} qStr = qStr.substring(0, qStr.length - 2) + ' WHERE `id` = '+rowId;
+								qz.addQuery(qStr,'lol');
+								qz.triggerStack(function(data){delete data.idCheck;}); 
+							} else {
+								qz.addQuery("INSERT INTO `"+tableName+"` VALUES ("+valueArr.join(', ')+")",'lol');
+								qz.triggerStack(function(data){});
+							}
+						});
+					} 
+				}				
+			}
+		}
+		//qz.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
+		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); console.log("db updated");});
+	}
+}
+
 
 function defaultCallback(data){}
 
@@ -236,7 +275,6 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		courseId = keyvalue[3].value; 
 		qs.addQuery("SELECT `gender`, `dateOfBirth`, `id` FROM `student` WHERE `firstName` = '"+studentName[0]+"' AND `lastName` = '"+studentName[1]+"'", "studentData"); 
 		qs.triggerStack(function(data){
-			console.log(data);
 			qs.addQuery("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' LIMIT 1", "course_student_id");
 			qs.triggerStack(function(data){
 				qs.addQuery("SELECT cast(((SELECT julianday('now') - julianday('"+data.studentData[0].dateOfBirth+"'))/365) as int) AS yearsOld", "dateData");
@@ -246,8 +284,8 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 						if(data.taskData != undefined){
 							var d = new Date(); 
 							qs.addQuery("INSERT INTO `course_student_task_attempt` (`id`,`course_student_id`,`task_id`,`value`,`timestamp`) VALUES "+
-								"((SELECT cast((SELECT MAX(`id`) FROM `course_student_task_attempt`) as int) + 1), '"+data.course_student_id[0].id+"', "+
-								"'"+data.taskData[0].id+"', '"+value+"', '"+d.getFullYear()+'-'+pad((d.getMonth()+1),2)+'-'+pad(d.getDate(),2)+' '+d.toTimeString().substring(0,8)+"')",'none'); 
+								"((SELECT cast((SELECT MAX((`id`+0)) FROM `course_student_task_attempt`) as int) + 1), '"+data.course_student_id[0].id+"', "+ //implicit cast to int in the select max
+								"'"+data.taskData[0].id+"', '"+value+"', '"+buildTimeString()+"')",'none'); 
 							qs.triggerStack(function(data){call(data);}); 
 						} else call({error: true, comments: 'The task "'+taskName+'" is not allowed for the student '+studentName[0]+' '+studentName[1]+'. Please check the Presidential Fitness standards.'});
 					});
@@ -256,9 +294,15 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		});
 	}
 }
-/*
-SELECT `id` FROM `task` WHERE `name` = 'Curl-Ups / Min' AND `age` = (SELECT round((SELECT julianday('now') - julianday('1999-02-23'))/365)) AND `gender` = 'Male' 
-*/
+
+resultsDatabase.prototype.getChanges = function(call){
+	var qz = new queryStack(this); 
+	qz.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'last_sync' LIMIT 1", "syncData"); 
+	qz.triggerStack(function(data){
+		for(var i=0; i<db.syncingTables.length; i++) qz.addQuery("SELECT * FROM `"+db.syncingTables[i]+"` WHERE `timestamp` > '"+data.syncData[0].prop_value+"'",db.syncingTables[i]); 
+		qz.triggerStack(function(data){call(data);}); 
+	}); 
+}
 
 /**
  * Parses a key->value pair. 
@@ -366,4 +410,34 @@ function qCallback(response, context, identifier, onFinish){
 	
 	context.reportingIn++; 
 	if(context.reportingIn == context.stack.length){ context.stack = []; onFinish(context.data); context.reportingIn = 0;}
+}
+
+function executeFuncsSynchronously(funcs, args, index){
+	if(funcs.length == args.length){
+		if(funcs[index+1] != undefined){
+			db.localQuery(args[index], function(data){ funcs[index](data); executeFuncsSynchronously(funcs, args, index + 1); });
+		} else db.localQuery(args[index], function(data){ funcs[index](data); });
+	}
+}
+
+function stringifyEveryTable(obj){
+	var stringified = ''; 
+	if(obj.course != undefined) stringified+=JSON.stringify(obj.course).substring(0,JSON.stringify(obj.course).length - 2)+", \"name\": \"course\"}]"; 
+	if(obj.course_student != undefined) stringified+=JSON.stringify(obj.course_student).substring(0,JSON.stringify(obj.course_student).length - 2)+", \"name\": \"course_student\"}]";
+	if(obj.course_student_task_attempt != undefined) stringified+=JSON.stringify(obj.course_student_task_attempt).substring(0,JSON.stringify(obj.course_student_task_attempt).length - 2)+", \"name\": \"course_student_task_attempt\"}]";
+	if(obj.course_task != undefined) stringified+=JSON.stringify(obj.course_task).substring(0,JSON.stringify(obj.course_task).length - 2)+", \"name\": \"course_task\"}]";
+	if(obj.student != undefined) stringified+=JSON.stringify(obj.student).substring(0,JSON.stringify(obj.student).length - 2)+", \"name\": \"student\"}]"; 	
+	if(obj.task != undefined) stringified+=JSON.stringify(obj.task).substring(0,JSON.stringify(obj.task).length - 2)+", \"name\": \"task\"}]";
+	if(obj.task_type != undefined) stringified+=JSON.stringify(obj.task_type).substring(0,JSON.stringify(obj.task_type).length - 2)+", \"name\": \"task_type\"}]";	
+	return stringified; 
+}
+
+/**
+ * Builds a string with the current time/date formatted like a SQL timestamp, adjusting for the server running on EST.
+ */ 
+
+function buildTimeString(){
+	var d = new Date(), 
+	d2 = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours()-4, d.getUTCMinutes(), d.getUTCSeconds()));
+	return d2.getUTCFullYear()+'-'+pad((d2.getUTCMonth()+1),2)+'-'+pad(d2.getUTCDate(),2)+' '+d2.toUTCString().substring(17,25)
 }

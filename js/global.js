@@ -192,7 +192,12 @@ function deviceRegister(){
  * @param {function} callback - The function to call when the server responds with the JSON of new data to update/add to the local DB
  */ 
 
+ setTimeout(function(){
+	db.getChanges(function(data){syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(data.syncData[0].prop_value, stringifyEveryTable(data), function(x){db.updateResponse(x);});}); 
+ },1000);
+ 
 function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync, changes, callback) {
+	console.log(changes);
 	$.post(REMOTE_PATH + 'mobile_app/sync.php', {
 		'username' 	: user.username,
 		'password'	: user.passHash,
@@ -200,10 +205,10 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 		'changes'	: changes, 
 		'timestamp'	: new Date().getTime() 
 	}, function(successData) {
-		successData = JSON.parse(unescape(successData));
+		//successData = JSON.parse(unescape(successData));
 		console.log(successData);
 		if (successData.credentialsCorrect) {
-			callback(successData.changes);
+	//		callback(successData.changes);
 		} else {
 			console.log(":p credentials were wrong!!!");	
 		}
@@ -213,6 +218,6 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 }
 
 function pad(str, max) {
-  return str.length < max ? pad("0" + str, max) : str;
+  return ((str+'').length < max) ? pad("0" + str, max) : str;
 }
 

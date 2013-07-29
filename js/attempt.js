@@ -70,14 +70,15 @@ function storeData(el, taskname, type){
 		if(inputtedValue.length > 0) values.push([inputtedValue, $(this).parent().parent().children('.studentName').html(), $(this)]);
 	});
 	
-	var validated = validateInput(values, type); 
+	var validated = validateInput(values, type), args = [], funcs = [];
 	
 	if(values.length > 0 && validated){
 		el.attr("value","Saving...").css("background-color","#CCFFCC");
 		el.prev().children('span').html("Saving...");
 		var countAttemptsLogged = 0; 
 		for(var i=0; i<values.length; i++){
-			db.localQuery("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname+"&course="+courseToLoad, function(data){
+			args.push("requested=insertNewAttempts&student_name="+values[i][1]+"&value="+values[i][0]+"&task="+taskname+"&course="+courseToLoad);
+			funcs.push(function(data){
 				countAttemptsLogged++;
 				if(data.error){
 					el.attr("value","Saved!").css("background-color","red");
@@ -95,10 +96,9 @@ function storeData(el, taskname, type){
 						el.prev().children('span').html("Save");
 					}, 2000); 
 				}
-				
-				
 			});
-		}
+		} 
+		executeFuncsSynchronously(funcs, args, 0); 
 	}
 }
 
