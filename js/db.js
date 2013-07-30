@@ -111,7 +111,7 @@ resultsDatabase.prototype.syncResponse = function(response){
 		}
 		var d = new Date(); 
 		qz.addQuery("INSERT INTO `device` (`prop_name`,`prop_value`) VALUES ('last_sync', '"+buildTimeString()+"')",'none'); 
-		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); });
+		qz.triggerStack(function(data){$.mobile.loading("hide"); $('body').remove($('#clickBlocker')); $(document).trigger("databaseready"); });
 	}
 }
 
@@ -147,9 +147,20 @@ resultsDatabase.prototype.updateResponse = function(response){
 				}				
 			}
 		}
-		//qz.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
+		qz.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
 		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); console.log("db updated");});
 	}
+}
+
+resultsDatabase.prototype.sync = function(){
+	//$('body').append($('<div id="clickBlocker"></div>'));
+	$.mobile.loading( "show", {
+		text: "Syncing database...",
+		textVisible: true,
+		theme: "c",
+		html: ""
+	});
+	db.getChanges(function(data){syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(data.syncData[0].prop_value, stringifyEveryTable(data), function(x){db.updateResponse(x);});}); 
 }
 
 
@@ -421,15 +432,23 @@ function executeFuncsSynchronously(funcs, args, index){
 }
 
 function stringifyEveryTable(obj){
-	var stringified = ''; 
-	if(obj.course != undefined) stringified+=JSON.stringify(obj.course).substring(0,JSON.stringify(obj.course).length - 2)+", \"name\": \"course\"}]"; 
-	if(obj.course_student != undefined) stringified+=JSON.stringify(obj.course_student).substring(0,JSON.stringify(obj.course_student).length - 2)+", \"name\": \"course_student\"}]";
-	if(obj.course_student_task_attempt != undefined) stringified+=JSON.stringify(obj.course_student_task_attempt).substring(0,JSON.stringify(obj.course_student_task_attempt).length - 2)+", \"name\": \"course_student_task_attempt\"}]";
-	if(obj.course_task != undefined) stringified+=JSON.stringify(obj.course_task).substring(0,JSON.stringify(obj.course_task).length - 2)+", \"name\": \"course_task\"}]";
-	if(obj.student != undefined) stringified+=JSON.stringify(obj.student).substring(0,JSON.stringify(obj.student).length - 2)+", \"name\": \"student\"}]"; 	
-	if(obj.task != undefined) stringified+=JSON.stringify(obj.task).substring(0,JSON.stringify(obj.task).length - 2)+", \"name\": \"task\"}]";
-	if(obj.task_type != undefined) stringified+=JSON.stringify(obj.task_type).substring(0,JSON.stringify(obj.task_type).length - 2)+", \"name\": \"task_type\"}]";	
-	return stringified; 
+	var stringified = '['; 
+	if(obj.course != undefined)
+		for(var i=0; i<obj.course_student.length; i++) stringified+=JSON.stringify(obj.course[i]).substring(0,JSON.stringify(obj.course[i]).length - 1)+", \"name\": \"course\"}, "; 
+	if(obj.course_student != undefined)
+		for(var i=0; i<obj.course_student.length; i++) stringified+=JSON.stringify(obj.course_student[i]).substring(0,JSON.stringify(obj.course_student[i]).length - 1)+", \"name\": \"course_student\"}, ";		
+	if(obj.course_student_task_attempt != undefined) 
+		for(var i=0; i<obj.course_student_task_attempt.length; i++) stringified+=JSON.stringify(obj.course_student_task_attempt[i]).substring(0,JSON.stringify(obj.course_student_task_attempt[i]).length - 1)+", \"name\": \"course_student_task_attempt\"}, ";
+	if(obj.course_task != undefined) 
+		for(var i=0; i<obj.course_task.length; i++) stringified+=JSON.stringify(obj.course_task[i]).substring(0,JSON.stringify(obj.course_task[i]).length - 1)+", \"name\": \"course_task\"}, ";
+	if(obj.student != undefined)
+		for(var i=0; i<obj.student.length; i++) stringified+=JSON.stringify(obj.student[i]).substring(0,JSON.stringify(obj.student[i]).length - 1)+", \"name\": \"student\"}, "; 	
+	if(obj.task != undefined)
+		for(var i=0; i<obj.task.length; i++) stringified+=JSON.stringify(obj.task[i]).substring(0,JSON.stringify(obj.task[i]).length - 1)+", \"name\": \"task\"}, ";
+	if(obj.task_type != undefined) 
+		for(var i=0; i<obj.task_type.length; i++) stringified+=JSON.stringify(obj.task_type[i]).substring(0,JSON.stringify(obj.task_type[i]).length - 1)+", \"name\": \"task_type\"}, ";	
+	if(stringified !='[') return stringified.substring(0,stringified.length - 2)+']'; 
+	else return false; 
 }
 
 /**

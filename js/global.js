@@ -129,10 +129,10 @@ function genericAjax(callback, data, path){
 function checkId(){ 
 	db.localQuery("uniqueId", function(data){
 		if (data.device_id != undefined && data.device_id[0].prop_value > 0 ) {
-			console.log("calling react true");
+			console.log("device verified");
 			reactToId(true); 
 		} else {
-			console.log("calling react false");
+			console.log("device unverified");
 			reactToId(false);
 		}
 	});
@@ -191,13 +191,8 @@ function deviceRegister(){
  *	)
  * @param {function} callback - The function to call when the server responds with the JSON of new data to update/add to the local DB
  */ 
-
- setTimeout(function(){
-	db.getChanges(function(data){syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(data.syncData[0].prop_value, stringifyEveryTable(data), function(x){db.updateResponse(x);});}); 
- },1000);
  
 function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync, changes, callback) {
-	console.log(changes);
 	$.post(REMOTE_PATH + 'mobile_app/sync.php', {
 		'username' 	: user.username,
 		'password'	: user.passHash,
@@ -205,10 +200,9 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 		'changes'	: changes, 
 		'timestamp'	: new Date().getTime() 
 	}, function(successData) {
-		//successData = JSON.parse(unescape(successData));
-		console.log(successData);
+		successData = JSON.parse(unescape(successData));
 		if (successData.credentialsCorrect) {
-	//		callback(successData.changes);
+			callback(successData.changes);
 		} else {
 			console.log(":p credentials were wrong!!!");	
 		}
@@ -220,4 +214,8 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 function pad(str, max) {
   return ((str+'').length < max) ? pad("0" + str, max) : str;
 }
+
+function sync(){ db.sync(); }
+
+
 
