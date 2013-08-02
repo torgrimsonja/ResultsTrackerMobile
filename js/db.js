@@ -91,7 +91,7 @@ resultsDatabase.prototype.downloadServer = function(){
  */
 
 resultsDatabase.prototype.syncResponse = function(response){
-	var qz = new queryStack(this); 
+	var qs = new queryStack(this); 
 	if(!response.error){
 		for(var prop in response){
 			if(response.hasOwnProperty(prop)){
@@ -99,24 +99,24 @@ resultsDatabase.prototype.syncResponse = function(response){
 				for(var k=0; k<response[prop][0].length; k++){
 					tableArr.push('`'+escapeSqlString(response[prop][0][k])+'` varchar(255)'); 
 				}	
-				qz.addQuery("CREATE TABLE IF NOT EXISTS `"+prop+"` ("+tableArr.join(', ')+")"); 
+				qs.addQuery("CREATE TABLE IF NOT EXISTS `"+prop+"` ("+tableArr.join(', ')+")"); 
 				for(var j=1; j<response[prop].length; j++){
 					var valueArr = []; 
 					for(var vProp in response[prop][j]){
 						valueArr.push("'"+escapeSqlString(response[prop][j][vProp])+"'");
 					}
-					qz.addQuery("INSERT INTO `"+prop+"` VALUES ("+valueArr.join(', ')+")");
+					qs.addQuery("INSERT INTO `"+prop+"` VALUES ("+valueArr.join(', ')+")");
 				}				
 			}
 		}
 		var d = new Date(); 
-		qz.addQuery("INSERT INTO `device` (`prop_name`,`prop_value`) VALUES ('last_sync', '"+buildTimeString()+"')",'none'); 
-		qz.triggerStack(function(data){$.mobile.loading("hide"); $('body').remove($('#clickBlocker')); $(document).trigger("databaseready"); });
+		qs.addQuery("INSERT INTO `device` (`prop_name`,`prop_value`) VALUES ('last_sync', '"+buildTimeString()+"')",'none'); 
+		qs.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); listCourses();});
 	}
 }
 
 resultsDatabase.prototype.updateResponse = function(response){
-	var qz = new queryStack(this); 
+	var qs = new queryStack(this); 
 	if(!response.error){ 
 		for(var prop in response){
 			if(response.hasOwnProperty(prop)){
@@ -128,38 +128,47 @@ resultsDatabase.prototype.updateResponse = function(response){
 					}
 					if(response[prop][j].hasOwnProperty('id')){
 						var rowId = response[prop][j].id, tableName = prop;
-						qz.addQuery("SELECT * FROM `"+prop+"` WHERE `id` = '"+response[prop][j].id+"'","idCheck");
-						qz.triggerStack(function(data){
+						qs.rowData.push([rowId, tableName, valueArr, keyArr]);
+	
+						qs.addQuery("SELECT * FROM `"+prop+"` WHERE `id` = '"+response[prop][j].id+"'","idCheck");
+						qs.data.idBackup = response[prop][j].id; 
+						qs.triggerStack(function(data){
 							if(data.hasOwnProperty("idCheck")){
-								delete data.idCheck;
-								var qStr = 'UPDATE `'+tableName+'` SET '; 
-								for(var i=0; i<keyArr.length; i++){
-									qStr += "`"+keyArr[i]+"` = "+valueArr[i]+", ";
-								} qStr = qStr.substring(0, qStr.length - 2) + ' WHERE `id` = '+rowId;
-								qz.addQuery(qStr,'lol');
-								qz.triggerStack(function(data){delete data.idCheck;}); 
+								var thisRow; 
+								
+								for(var a=0; a<qs.rowData.length; a++){
+									for(var i=0; i<data.idCheck.length; i++){
+										if(qs.rowData[a][0] == data.idCheck[i].id) thisRow = qs.rowData[a]; 
+									}
+								}
+								delete data.idCheck; delete data.backupId; 
+								var qStr = 'UPDATE `'+thisRow[1]+'` SET '; 
+								for(var i=0; i<thisRow[3].length; i++){
+									qStr += "`"+thisRow[3][i]+"` = "+thisRow[2][i]+", ";
+								} qStr = qStr.substring(0, qStr.length - 2) + ' WHERE `id` = '+thisRow[0];
+								qs.addQuery(qStr,'lol');
+								qs.triggerStack(function(data){ }); 
 							} else {
-								qz.addQuery("INSERT INTO `"+tableName+"` VALUES ("+valueArr.join(', ')+")",'lol');
-								qz.triggerStack(function(data){});
+								var thisRow = qs.data.backupId;
+								delete qs.data.backupId; 
+								qs.addQuery("INSERT INTO `"+thisRow[1]+"` VALUES ("+thisRow[2].join(', ')+")",'lol');
+								console.log("INSERT INTO `"+thisRow[1]+"` VALUES ("+thisRow[2].join(', ')+")");
+								qs.triggerStack(function(data){});
 							}
-						});
+						}); 
 					} 
 				}				
 			}
 		}
-		qz.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
-		qz.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); console.log("db updated");});
+		qs.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
+		//db.trimDatabase(); 
+		qs.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); console.log("db updated");});
 	}
 }
 
 resultsDatabase.prototype.sync = function(){
 	//$('body').append($('<div id="clickBlocker"></div>'));
-	$.mobile.loading( "show", {
-		text: "Syncing database...",
-		textVisible: true,
-		theme: "c",
-		html: ""
-	});
+
 	db.getChanges(function(data){syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(data.syncData[0].prop_value, stringifyEveryTable(data), function(x){db.updateResponse(x);});}); 
 }
 
@@ -210,109 +219,163 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 	var call = callback; //I use the name "callback" elsewhere
 	var ref = this; //I keep this reference around to use prototype methods deeper in
 	var qs = new queryStack(this);
-	if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
-		qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE 1", "name");
-		qs.triggerStack(function(data){
-			call(data, 'local');
-		}); 
-	}
-	else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
-		var keyvalue = this.getArgs(data); 
-		qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"'", "course_student");
-		qs.triggerStack(function(data){
-			if(data.course_student != undefined){
-				for(var i=0; i<data.course_student.length; i++){
-					qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"'", "student");
-					qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
-				}
-			}
+	if(typeof data == 'string'){
+		if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
+			qs.addQuery("SELECT DISTINCT `name`, `id` FROM `course` WHERE `user_id` = '"+user.id+"' AND `active` = '1'", "name");
 			qs.triggerStack(function(data){
-				if(data.course_student_task_attempt != undefined){
-					for(var i=0; i<data.course_student_task_attempt.length; i++){
-						qs.addQuery("SELECT `name`, `operator`, `value`, `id` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+				call(data);
+			}); 
+		}
+		else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
+			var keyvalue = this.getArgs(data); 
+			qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"' AND `deleted` = 'false'", "course_student");
+			qs.triggerStack(function(data){
+				if(data.course_student != undefined){
+					for(var i=0; i<data.course_student.length; i++){
+						qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student");
+						qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 					}
-				} 
+				}
 				qs.triggerStack(function(data){
-					call(data, 'local');
+					if(data.course_student_task_attempt != undefined){
+						for(var i=0; i<data.course_student_task_attempt.length; i++){
+							qs.addQuery("SELECT `name`, `operator`, `value`, `id` FROM `task` WHERE `id` = '"+data.course_student_task_attempt[i].task_id+"' LIMIT 1", "task"); 
+						}
+					} 
+					qs.triggerStack(function(data){call(data);});
 				});
 			});
-		});
-		
-	} else if(data == "requested=tasknames"){
-		qs.addQuery("SELECT DISTINCT `name`, `type_id` FROM `task`", "taskname");
-		qs.triggerStack(function(data) {
-			call(data, 'local');
-		});
-	}
-	
-	else if(data.search("requested=examineStudent") > -1){
-		var keyvalue = this.getArgs(data),
-		returned = false; 
-		qs.addQuery("SELECT DISTINCT `course_id`, `rem_id` FROM `course_student` WHERE `student_id` = '"+keyvalue[0].value+"'", "course_student");
-		qs.triggerStack(function(data){
-			for(var i=0; i<data.course_student.length; i++){
-				qs.addQuery("SELECT `name` FROM `course` WHERE `rem_id` ='"+data.course_student[i].course_id+"'", "course");
-				qs.addQuery("SELECT `task_id`, `value` FROM `course_student_task_attempt` WHERE `course_student_id` ='"+qs.data.course_student[i].rem_id+"'", "course_student_task_attempt");
-			}
 			
-			qs.triggerStack(function(data){
-				if(!returned){ call(data, 'local'); returned = true; }
+		} else if(data == "requested=tasknames"){
+			qs.addQuery("SELECT DISTINCT `name`, `type_id` FROM `task`", "taskname");
+			qs.triggerStack(function(data) {
+				call(data);
 			});
-		});	
-	} else if (data == "uniqueId"){
-		var returned = false; 
-		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'device_id' LIMIT 1", "device_id");
-		qs.triggerStack(function(data){ if(!returned){ call(data, 'local'); returned = true; }}); 
-	}
-	
-	else if (data == "auth"){
-		var returned = false; 
-		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1", "username"); 
-		qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'passHash' LIMIT 1", "passHash");
-		qs.triggerStack(function(data){ if(!returned){ call(data, 'local'); returned = true; }});
-	}
-	
-	else if (data == "logout"){
-		console.log("database logging out");
-		qs.addQuery("DELETE FROM `device` WHERE `prop_name` = 'username' OR `prop_name` = 'passHash'", "none");
-		qs.triggerStack(function(data){ call(data, 'local');});
-	}
-	
-	else if (data.search("requested=insertNewAttempt") > -1){
-		var keyvalue = this.getArgs(data),
-		studentName = keyvalue[0].value.split(' '),
-		value = keyvalue[1].value,
-		taskName = keyvalue[2].value,
-		courseId = keyvalue[3].value; 
-		qs.addQuery("SELECT `gender`, `dateOfBirth`, `id` FROM `student` WHERE `firstName` = '"+studentName[0]+"' AND `lastName` = '"+studentName[1]+"'", "studentData"); 
-		qs.triggerStack(function(data){
-			qs.addQuery("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' LIMIT 1", "course_student_id");
+		}
+		
+		else if(data.search("requested=examineStudent") > -1){
+			//This was once a thing and currently isn't a thing
+		} else if (data == "uniqueId"){
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'device_id' LIMIT 1", "device_id");
+			qs.triggerStack(function(data){call(data); }); 
+		}
+		
+		else if (data == "auth"){
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'username' LIMIT 1", "username"); 
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'passHash' LIMIT 1", "passHash");
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'userId' LIMIT 1", "userId");
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'last_sync' LIMIT 1", "last_sync");
+			qs.triggerStack(function(data){call(data, 'local');});
+		}
+		
+		else if (data == "logout"){
+			qs.addQuery("DELETE FROM `device` WHERE `prop_name` = 'username' OR `prop_name` = 'passHash' OR `prop_name` = 'userId' OR `prop_name` = 'last_sync'", "none");
+			qs.triggerStack(function(data){ call(data, 'local');});
+			db.destroy();
+		}
+		
+		else if (data.search("requested=insertNewAttempt") > -1){
+			var keyvalue = this.getArgs(data),
+			studentName = keyvalue[0].value.split(' '),
+			value = keyvalue[1].value,
+			taskName = keyvalue[2].value,
+			courseId = keyvalue[3].value; 
+			qs.addQuery("SELECT `gender`, `dateOfBirth`, `id` FROM `student` WHERE `firstName` = '"+studentName[0]+"' AND `lastName` = '"+studentName[1]+"' AND `deleted` = 'false'", "studentData"); 
 			qs.triggerStack(function(data){
-				qs.addQuery("SELECT cast(((SELECT julianday('now') - julianday('"+data.studentData[0].dateOfBirth+"'))/365) as int) AS yearsOld", "dateData");
+				console.log("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' AND `deleted` = 'false' LIMIT 1", "course_student_id");
+				qs.addQuery("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' AND `deleted` = 'false' LIMIT 1", "course_student_id");
 				qs.triggerStack(function(data){
-					qs.addQuery("SELECT `id`, `operator`, `value`  FROM `task` WHERE `name` = '"+taskName+"' AND `age` = '"+data.dateData[0].yearsOld+"' AND `gender` = '"+data.studentData[0].gender.toLowerCase()+"' LIMIT 1", "taskData");	
+					qs.addQuery("SELECT cast(((SELECT julianday('now') - julianday('"+data.studentData[0].dateOfBirth+"'))/365) as int) AS yearsOld", "dateData");
 					qs.triggerStack(function(data){
-						if(data.taskData != undefined){
-							var d = new Date(); 
-							qs.addQuery("INSERT INTO `course_student_task_attempt` (`id`,`course_student_id`,`task_id`,`value`,`timestamp`) VALUES "+
-								"((SELECT cast((SELECT MAX((`id`+0)) FROM `course_student_task_attempt`) as int) + 1), '"+data.course_student_id[0].id+"', "+ //implicit cast to int in the select max
-								"'"+data.taskData[0].id+"', '"+value+"', '"+buildTimeString()+"')",'none'); 
-							qs.triggerStack(function(data){call(data);}); 
-						} else call({error: true, comments: 'The task "'+taskName+'" is not allowed for the student '+studentName[0]+' '+studentName[1]+'. Please check the Presidential Fitness standards.'});
+						qs.addQuery("SELECT `id`, `operator`, `value`  FROM `task` WHERE `name` = '"+taskName+"' AND `age` = '"+data.dateData[0].yearsOld+"' AND `gender` = '"+data.studentData[0].gender.toLowerCase()+"' LIMIT 1", "taskData");	
+						qs.triggerStack(function(data){
+							if(data.taskData != undefined){
+								var d = new Date(); 
+								qs.addQuery("INSERT INTO `course_student_task_attempt` (`id`,`course_student_id`,`task_id`,`value`,`deleted`, `timestamp`) VALUES "+
+									"((SELECT cast((SELECT MAX((`id`+0)) FROM `course_student_task_attempt`) as int) + 1), '"+data.course_student_id[0].id+"', "+ //implicit cast to int in the select max
+									"'"+data.taskData[0].id+"', '"+value+"', 'false', '"+buildTimeString()+"')",'none'); 
+								qs.triggerStack(function(data){call(data);}); 
+							} else call({error: true, comments: 'The task "'+taskName+'" is not allowed for the student '+studentName[0]+' '+studentName[1]+'. Please check the Presidential Fitness standards.'});
+						});
 					});
 				});
 			});
-		});
+		}
+		
+		else if (data.search("requested=assocStudents") > -1){
+			var keyvalue = this.getArgs(data),
+			userId = keyvalue[0].value,
+			courseProvided = keyvalue[1].value; 
+			qs.addQuery("SELECT `id` FROM `course` WHERE `user_id` = '"+userId+"' AND `active` = '1'",'course');
+			qs.triggerStack(function(data){
+				if(data.hasOwnProperty('course')){
+					for(var i=0; i<data.course.length; i++) qs.addQuery("SELECT `student_id`, `course_id` FROM `course_student` WHERE `course_id` = '"+data.course[i].id+"' AND `deleted` = 'false'","course_student"); 
+					qs.triggerStack(function(data){
+						if(data.hasOwnProperty('course_student')){
+							for(var i=0; i<data.course_student.length; i++){
+								if(courseProvided != 'new' && data.course_student[i].course_id == courseProvided) qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student_in"); 
+								else qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student_out"); 
+							}
+							qs.triggerStack(function(data){call(data);}); 
+						}
+					});
+				}
+			});
+		}	
+	} else {
+		if(data.hasOwnProperty("requested") && data.requested == "newCourse"){
+			qs.addQuery("INSERT INTO `course` (`id`, `user_id`, `name`, `active`, `timestamp`) VALUES ( (SELECT MAX(`id`+0) + 1 FROM `course`), '"+user.id+"', '"+data.name+"' , '1', '"+buildTimeString()+"')",'lol');
+			for(var i=0; i<data.confirmedStudents.length; i++){
+				qs.addQuery("INSERT INTO `course_student` (`id`, `student_id`, `course_id`, `deleted`, `timestamp`) VALUES ( (SELECT MAX(`id`+0) + 1 FROM `course_student`), '"+
+				data.confirmedStudents[i].id+"', (SELECT MAX(`id`+0) FROM `course`), 'false', '"+buildTimeString()+"')",'lol');
+			}
+			qs.triggerStack(function(data){ sync(false); call(data); });
+		} else if(data.hasOwnProperty("requested") && data.requested == "editStudents"){
+			qs.addQuery("SELECT `student_id` FROM `course_student` WHERE `course_id` = '"+courseToLoad+"'",'beforeIds');
+			qs.addQuery("UPDATE `course_student` SET `deleted` = 'true', `timestamp`='"+buildTimeString()+"' WHERE `course_id` = '"+courseToLoad+"'", 'lol');
+			qs.triggerStack(function(d){
+				var addedStudents = []; 
+				for(var i=0; i<data.confirmedStudents.length; i++){
+					if(d.hasOwnProperty("beforeIds")){
+						for(var j=0; j<d.beforeIds.length; j++){
+							if(d.beforeIds[j].student_id == data.confirmedStudents[i].id){ 
+								qs.addQuery("UPDATE `course_student` SET `deleted` = 'false', `timestamp` = '"+buildTimeString()+"' WHERE `student_id` = '"+data.confirmedStudents[i].id+
+								"' AND `course_id` = '"+courseToLoad+"'", 'lol'); 
+								addedStudents.push(data.confirmedStudents[i].id);
+							}
+						}
+					}
+				}
+				console.log(data.confirmedStudents);
+				for(var i=0; i<data.confirmedStudents.length; i++){
+					if(addedStudents.indexOf(data.confirmedStudents[i].id) < 0) qs.addQuery("INSERT INTO `course_student` (`id`, `student_id`, `course_id`, `deleted`, `timestamp`) VALUES ((SELECT MAX(`id`+0)+1 FROM `course_student`),"+
+																			"'"+data.confirmedStudents[i].id+"', '"+courseToLoad+"', 'false', '"+buildTimeString()+"')",'lol');
+				}
+				qs.triggerStack(function(data){ sync(false); call(data); });
+			});
+		}
 	}
 }
 
 resultsDatabase.prototype.getChanges = function(call){
-	var qz = new queryStack(this); 
-	qz.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'last_sync' LIMIT 1", "syncData"); 
-	qz.triggerStack(function(data){
-		for(var i=0; i<db.syncingTables.length; i++) qz.addQuery("SELECT * FROM `"+db.syncingTables[i]+"` WHERE `timestamp` > '"+data.syncData[0].prop_value+"'",db.syncingTables[i]); 
-		qz.triggerStack(function(data){call(data);}); 
-	}); 
+	setTimeout(function(){
+	var qs = new queryStack(this); 
+	qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'last_sync' LIMIT 1", "syncData"); 
+	qs.triggerStack(function(data){
+		for(var i=0; i<db.syncingTables.length; i++) qs.addQuery("SELECT * FROM `"+db.syncingTables[i]+"` WHERE (SELECT strftime('%s',`timestamp`)) > (SELECT strftime('%s','"+data.syncData[0].prop_value+"'))",db.syncingTables[i]); 
+		console.log(qs.stack);
+		qs.triggerStack(function(data){console.log(data);call(data); }); 
+	}); }, 1000);
+}
+
+resultsDatabase.prototype.trimDatabase = function(){
+	var qs = new queryStack(this);
+	qs.addQuery("DELETE FROM `course` WHERE `active` = '0'",'lol');
+	qs.addQuery("DELETE FROM `course_student` WHERE `deleted` = 'true'",'lol');
+	qs.addQuery("DELETE FROM `course_student_task_attempt` WHERE `deleted` = 'true'",'lol');
+	qs.addQuery("DELETE FROM `student` WHERE `deleted` = 'true'",'lol');
+	qs.addQuery("DELETE FROM `course_student` WHERE `deleted` = 'true'",'lol');
+	qs.triggerStack(function(d){});
 }
 
 /**
@@ -334,14 +397,15 @@ resultsDatabase.prototype.getArgs = function(data){
  * For debugging, drops all hardcoded tables and redownloads them. 
  */
 
-resultsDatabase.prototype.destroyAndRebuild = function(){
-	this.query("DROP TABLE IF EXISTS `course`", callback);
-	this.query("DROP TABLE IF EXISTS `student`", callback);
-	this.query("DROP TABLE IF EXISTS `task`", callback);
-	this.query("DROP TABLE IF EXISTS `task_type`", callback);
-	this.query("DROP TABLE IF EXISTS `course_student_task_attempt`", callback);
-	this.query("");
-	this.downloadServer();
+resultsDatabase.prototype.destroy = function(){
+	this.query("DROP TABLE IF EXISTS `course`", function(x){});
+	this.query("DROP TABLE IF EXISTS `student`", function(x){});
+	this.query("DROP TABLE IF EXISTS `task`", function(x){});
+	this.query("DROP TABLE IF EXISTS `task_type`", function(x){});
+	this.query("DROP TABLE IF EXISTS `course_student_task_attempt`", function(x){});
+	this.query("DROP TABLE IF EXISTS `course_student`", function(x){});
+	this.query("DROP TABLE IF EXISTS `course_task`", function(x){});
+	console.log("dropping all tables");
 }
 
 /**
@@ -357,6 +421,7 @@ var queryStack = function(db){
 	this.data["error"] = false; 
 	this.reportingIn = 0; 
 	this.lastResultCount = 0; 
+	this.rowData = []; 
 }
 
 /**
@@ -432,21 +497,23 @@ function executeFuncsSynchronously(funcs, args, index){
 }
 
 function stringifyEveryTable(obj){
+
 	var stringified = '['; 
 	if(obj.course != undefined)
-		for(var i=0; i<obj.course_student.length; i++) stringified+=JSON.stringify(obj.course[i]).substring(0,JSON.stringify(obj.course[i]).length - 1)+", \"name\": \"course\"}, "; 
+		for(var i=0; i<obj.course.length; i++) stringified+=JSON.stringify(obj.course[i]).substring(0,JSON.stringify(obj.course[i]).length - 1)+", \"propNameNoConflict\": \"course\"}, "; 
 	if(obj.course_student != undefined)
-		for(var i=0; i<obj.course_student.length; i++) stringified+=JSON.stringify(obj.course_student[i]).substring(0,JSON.stringify(obj.course_student[i]).length - 1)+", \"name\": \"course_student\"}, ";		
+		for(var i=0; i<obj.course_student.length; i++) stringified+=JSON.stringify(obj.course_student[i]).substring(0,JSON.stringify(obj.course_student[i]).length - 1)+", \"propNameNoConflict\": \"course_student\"}, ";		
 	if(obj.course_student_task_attempt != undefined) 
-		for(var i=0; i<obj.course_student_task_attempt.length; i++) stringified+=JSON.stringify(obj.course_student_task_attempt[i]).substring(0,JSON.stringify(obj.course_student_task_attempt[i]).length - 1)+", \"name\": \"course_student_task_attempt\"}, ";
+		for(var i=0; i<obj.course_student_task_attempt.length; i++) stringified+=JSON.stringify(obj.course_student_task_attempt[i]).substring(0,JSON.stringify(obj.course_student_task_attempt[i]).length - 1)+
+			", \"propNameNoConflict\": \"course_student_task_attempt\"}, ";
 	if(obj.course_task != undefined) 
-		for(var i=0; i<obj.course_task.length; i++) stringified+=JSON.stringify(obj.course_task[i]).substring(0,JSON.stringify(obj.course_task[i]).length - 1)+", \"name\": \"course_task\"}, ";
+		for(var i=0; i<obj.course_task.length; i++) stringified+=JSON.stringify(obj.course_task[i]).substring(0,JSON.stringify(obj.course_task[i]).length - 1)+", \"propNameNoConflict\": \"course_task\"}, ";
 	if(obj.student != undefined)
-		for(var i=0; i<obj.student.length; i++) stringified+=JSON.stringify(obj.student[i]).substring(0,JSON.stringify(obj.student[i]).length - 1)+", \"name\": \"student\"}, "; 	
+		for(var i=0; i<obj.student.length; i++) stringified+=JSON.stringify(obj.student[i]).substring(0,JSON.stringify(obj.student[i]).length - 1)+", \"propNameNoConflict\": \"student\"}, "; 	
 	if(obj.task != undefined)
-		for(var i=0; i<obj.task.length; i++) stringified+=JSON.stringify(obj.task[i]).substring(0,JSON.stringify(obj.task[i]).length - 1)+", \"name\": \"task\"}, ";
+		for(var i=0; i<obj.task.length; i++) stringified+=JSON.stringify(obj.task[i]).substring(0,JSON.stringify(obj.task[i]).length - 1)+", \"propNameNoConflict\": \"task\"}, ";
 	if(obj.task_type != undefined) 
-		for(var i=0; i<obj.task_type.length; i++) stringified+=JSON.stringify(obj.task_type[i]).substring(0,JSON.stringify(obj.task_type[i]).length - 1)+", \"name\": \"task_type\"}, ";	
+		for(var i=0; i<obj.task_type.length; i++) stringified+=JSON.stringify(obj.task_type[i]).substring(0,JSON.stringify(obj.task_type[i]).length - 1)+", \"propNameNoConflict\": \"task_type\"}, ";	
 	if(stringified !='[') return stringified.substring(0,stringified.length - 2)+']'; 
 	else return false; 
 }

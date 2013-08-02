@@ -1,4 +1,4 @@
-<div data-role="page" id="course-landing" data-add-back-btn="true">
+<div data-role="page" id="course-landing" data-add-back-btn="true" data-direction="reverse">
 	<script src="js/course.js" type="text/javascript"></script> 
 	<link rel="stylesheet" type="text/css" href="css/course.css" />
 	<div data-role="header" style="height: 50px;"> 
@@ -7,6 +7,10 @@
 	<div data-role="content" id="course-landing-content">
 		<div id="students">
 		</div> 
+		<div id="buttons">
+			<input type="button" value="Manage Students" onclick="manageStudentsCourse()" />
+			<a href="studentManage.html" data-rel="dialog" style="display: none;" id="studentManageLink"></a>
+		</div>
 	</div>
 	<div data-role="footer" data-position="fixed">
 	</div>

@@ -1,5 +1,5 @@
 if(courseToLoad == undefined) $('#login-landing-content').html('<h1>An error occurred! Abandon all hope!</h1>'); 
-else genericAjax(asyncUpdateAttempt, 'requested=tasknames', 'refactor this sometime I guess'); 
+else db.localQuery('requested=tasknames', asyncUpdateAttempt); 
 
 /**
  * After the tasknames are loaded from the local database, this function builds the new task selector page. 
@@ -7,13 +7,14 @@ else genericAjax(asyncUpdateAttempt, 'requested=tasknames', 'refactor this somet
  */
  
 function asyncUpdateAttempt(response){
-	genericAjax(function(studentResponse){
+	db.localQuery( 'requested=students&id='+courseToLoad,
+	function(studentResponse){
 		for(var i=0; i<response.taskname.length; i++){
 			$('#taskPicker').append($('<div class="toCollapse" data-role="collapsible"><h3>'+response.taskname[i].name+'</h3></div>')
 			.append(getTaskPage(response.taskname[i], studentResponse)));
 		}
 		$('#taskPicker').trigger('create');
-	}, 'requested=students&id='+courseToLoad, '');
+	});
 	
 }
 
@@ -41,7 +42,7 @@ function getPage(taskname, students, type){
 	var toRet = $('<div class="attemptHeader"></div>')
 	.append($('<h1>'+taskname+'<h1>'));
 	for(var i=0; i<students.student.length; i++){
-		toRet.append($('<div class="studentInput"><span class="studentName">'+students.student[i].firstName+' '+students.student[i].lastName+'</span>'+getInput(type)+'</div>'));
+		toRet.append($('<div class="studentInput"><span class="studentName">'+students.student[i].firstName+' '+students.student[i].lastName+'</span>'+getInput(type + ' ' + taskname)+'</div>'));
 	} return toRet.append($('<input type="button" onclick="storeData($(this), \''+taskname+'\', \''+type+'\')" value="Save"/>')); 
 }
 
@@ -52,8 +53,11 @@ function getPage(taskname, students, type){
  */ 
 
 function getInput(type){
-	if(type == 'timed') return '<input type="text" pattern="[0-9][0-9]:[0-9[0-9]" placeholder="00:00" data-box="boxToSave" />';
-	if(type == 'reps') return '<input type="number" pattern="[0-9]+" placeholder="0" data-box="boxToSave" />'; 
+	if(type.search('timed') > -1){
+		if(type.search('Shuttle Run') > -1) return '<input type="text" pattern="^[0-9]*((\.)[0-9])?$" placeholder="0.0 (seconds)" data-box="boxToSave" />';
+		else return '<input type="text" pattern="[0-9][0-9]:[0-9[0-9]" placeholder="00:00" data-box="boxToSave" />';
+	}
+	if(type.search('reps') > -1) return '<input type="number" pattern="[0-9]+" placeholder="0" data-box="boxToSave" />'; 
 }
 
 /** 
@@ -99,6 +103,7 @@ function storeData(el, taskname, type){
 			});
 		} 
 		executeFuncsSynchronously(funcs, args, 0); 
+		setTimeout(sync(false),1000);
 	}
 }
 

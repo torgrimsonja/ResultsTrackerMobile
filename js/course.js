@@ -26,7 +26,7 @@ function initializeTable(response){
 			$('#students').append($(tableHeadStr+'</table')); 
 			createStudentView(false);
 		}
-	} else genericAjax(initializeTable, "requested=tasknames", 'admin/mobileAjaxGate.php');
+	} else db.localQuery("requested=tasknames", initializeTable);
 }
 
 /**
@@ -39,58 +39,62 @@ function createStudentView(response, type){
 	if(type == 'internet') response = $.parseJSON(response);
 	if(response){
 		if(!response.error){ 
-			var toAppend = ''; 
-			for(var i=0; i<response.student.length; i++){
-				if(response.student[i].firstName != undefined){
-				var courseStudentId;
-				for(var j=0; j<response.course_student.length; j++){
-					if(response.course_student[j].student_id == response.student[i].id) courseStudentId = response.course_student[j].id;
+			if(response.hasOwnProperty('student')){
+				var toAppend = ''; 
+				for(var i=0; i<response.student.length; i++){
+					if(response.student[i].firstName != undefined){
+					var courseStudentId;
+					for(var j=0; j<response.course_student.length; j++){
+						if(response.course_student[j].student_id == response.student[i].id) courseStudentId = response.course_student[j].id;
+					}
+						toAppend += '<tr><th class="students" data-studId="'+courseStudentId+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
+						for(var j=0; j<taskCount; j++){
+								toAppend += '<td class="emptyCell" data-columnNum="'+j+'"></td>'; 
+							}
+					}
+					toAppend += '</tr>';
 				}
-					toAppend += '<tr><th class="students" data-studId="'+courseStudentId+'">'+response.student[i].firstName+' '+response.student[i].lastName+'</th>';
-					for(var j=0; j<taskCount; j++){
-							toAppend += '<td class="emptyCell" data-columnNum="'+j+'"></td>'; 
-						}
+				$('#studentTable').append($(toAppend));
+				
+				$('.students').on("click", function(e){
+					studentToLoad = $(e.delegateTarget).attr("data-studId");
+					$.mobile.changePage("student.html");
+				});
+				var columnOfInterest;  
+				if(response.course_student_task_attempt != undefined){
+					for(var i=0; i<response.course_student_task_attempt.length; i++){
+						var thisAttempt = response.course_student_task_attempt[i]; 
+						var thisTask = response.task[i]; 
+						$('.taskHeader').each(function(){
+							var name = $(this).text();
+							if(thisTask.name == name){
+								columnOfInterest = $(this).attr("data-columnNum");
+							}
+						});
+						$('.emptyCell').each(function(){
+							if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
+								$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
+							}
+						});
+						
+						$('.cell').each(function(){
+							if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
+								if((thisTask.operator == "min" && parseFloat(thisAttempt.value) > parseFloat($(this).children('p').html())) || (thisTask.operator == "max" && secondsFromTime(thisAttempt.value) < secondsFromTime($(this).children('p').html()))) 
+									$(this).html('<p>'+thisAttempt.value+'</p>').css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
+							}
+						});
+					} 
 				}
-				toAppend += '</tr>';
-			}
-			$('#studentTable').append($(toAppend));
-			
-			$('.students').on("click", function(e){
-				studentToLoad = $(e.delegateTarget).attr("data-studId");
-				$.mobile.changePage("student.html");
-			});
-			var columnOfInterest;  
-			if(response.course_student_task_attempt != undefined){
-				for(var i=0; i<response.course_student_task_attempt.length; i++){
-					var thisAttempt = response.course_student_task_attempt[i]; 
-					var thisTask = response.task[i]; 
-					$('.taskHeader').each(function(){
-						var name = $(this).text();
-						if(thisTask.name == name){
-							columnOfInterest = $(this).attr("data-columnNum");
-						}
-					});
-					$('.emptyCell').each(function(){
-						if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
-							$(this).append($('<p>'+thisAttempt.value+'</p>')).attr("class", "cell").css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
-						}
-					});
-					
-					$('.cell').each(function(){
-						if($(this).attr("data-columnNum") == columnOfInterest && $(this).parent().children('th').attr("data-studId") == thisAttempt.course_student_id){
-							if((thisTask.operator == "min" && parseFloat(thisAttempt.value) > parseFloat($(this).children('p').html())) || (thisTask.operator == "max" && secondsFromTime(thisAttempt.value) < secondsFromTime($(this).children('p').html()))) 
-								$(this).html('<p>'+thisAttempt.value+'</p>').css("background-color", getProperColor(isPassingReq(thisAttempt.value, thisTask.operator, thisTask.value)));
-						}
-					});
-				} 
-			}
-			$('#students').trigger("create"); 
-			$('#course-landing-content').append($('<input type="button" value="Start New Task" />').on("click", function(){ $.mobile.changePage('attempt.html'); }));
-			$('#course-landing-content').trigger("create");
+				
+				$('#buttons').append($('<input type="button" value="Start New Task" />').on("click", function(){ $.mobile.changePage('attempt.html'); }));
+			} else {
+				$('#studentTable').remove();
+				$('#buttons').append($('<h2>No students have been added to this course.</h2>'));
+			} $('#course-landing-content').trigger("create"); 
 		}  
 		
 	} else {
-		genericAjax(createStudentView, 'requested=students&id='+courseToLoad, 'admin/mobileAjaxGate.php'); 
+		db.localQuery('requested=students&id='+courseToLoad, createStudentView); 
 	}
 }
 
@@ -144,4 +148,8 @@ function isPassingReq(supplied, operator, required){
 function getProperColor(isPassing){
 	if(isPassing) return '#4CEB46'; 
 	else return '#EB464C';
+}
+
+function manageStudentsCourse(){
+	$('#studentManageLink').click();
 }

@@ -20,13 +20,16 @@ function auth(uname, pword){
 			else { 
 				user.passHash = hex_sha1(pword); 
 				user.username = uname; 
+				user.id = $.parseJSON(jqXHR.responseText).id;
 				db.checkIfLoaded(true); 
 				$.mobile.pushStateEnabled = true;
+				if(loggedOutRecently) $.mobile.changePage('index.html');
 				$('#login-landing').dialog('close');
 				$.mobile.pushStateEnabled = false; 
 															//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
+				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('userId', '"+$.parseJSON(jqXHR.responseText).id+"')", defaultCallback);
 			}
 		},
 		error: function(jqXHR){ console.log(jqXHR); console.log(JSON.stringify(jqXHR)); },
@@ -93,6 +96,9 @@ function registrationSuccess(){
 
 function logOut(){
 	if(user.authed) db.localQuery("logout", function(data){
+		user = {authed: false, username: null, passHash: null, verifiedId: false, id: null}; 
+		$('body').append($('<a data-rel="dialog" style="display: none" href="login.html" id="openLogin"></a>'));
 		$('#openLogin').click();
+		loggedOutRecently = true;
 	});
 }

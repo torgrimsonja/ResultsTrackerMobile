@@ -7,7 +7,7 @@ function examineStudent(response){
 	if(response){
 		console.log(response);
 	} else {
-		genericAjax(examineStudent, "requested=examineStudent&studentId="+studentToLoad+"&courseId="+courseToLoad, 'admin/mobileAjaxGate.php');
+		db.localQuery("requested=examineStudent&studentId="+studentToLoad+"&courseId="+courseToLoad, examineStudent);
 	}
 
 }

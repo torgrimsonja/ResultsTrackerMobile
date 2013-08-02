@@ -3,10 +3,8 @@
 var REMOTE_PATH = 'http://killit.atsolinc.com/',
 DATA_THEME = 'c',
 c = 299792458, // m/s
-user = {authed: false, username: null, passHash: null, verifiedId: false},
-db, isPhoneGap = false; 
-
-
+user = {authed: false, username: null, passHash: null, verifiedId: false, id: null},
+db, isPhoneGap = false, loggedOutRecently = false, courseToLoad;
 
 var start = {
 	
@@ -112,17 +110,6 @@ function escapeSqlString(string){
 }
 
 /**
- * Queries the database based on a predefined keyword. 
- * @param {function} callback - To be called with the results. 
- */ 
- 
-function genericAjax(callback, data, path){
-	if(db.complete){ 
-		db.localQuery(data, callback); 
-	} else { setTimeout(function(){ db.localQuery(data, callback); }, 500); }
-}
-
-/**
  * Checks if a unique device id is stored in the local database, and calls reactToId asynchronously with the result. 
  */
 
@@ -151,7 +138,10 @@ function reactToId(exists){
 			user.authed = true;
 			user.username = data.username[0].prop_value;
 			user.passHash = data.passHash[0].prop_value;
+			user.id = data.userId[0].prop_value; 
 			listCourses();
+			setInterval(function(){ sync(false); }, 300000); 
+			if(new Date(buildTimeString()).getTime() -  new Date(data.last_sync[0].prop_value).getTime() > 300000) sync(true);
 		} else {
 			$('#openLogin').click(); 
 		}
@@ -201,6 +191,7 @@ function syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(last_sync
 		'timestamp'	: new Date().getTime() 
 	}, function(successData) {
 		successData = JSON.parse(unescape(successData));
+		console.log(successData);
 		if (successData.credentialsCorrect) {
 			callback(successData.changes);
 		} else {
@@ -215,7 +206,35 @@ function pad(str, max) {
   return ((str+'').length < max) ? pad("0" + str, max) : str;
 }
 
-function sync(){ db.sync(); }
+function sync(show){ 
+	if(show)	
+		$.mobile.loading( "show", {
+			text: "Syncing database...",
+			textVisible: true,
+			theme: "c",
+			html: ""
+		}); 
+	
+	db.sync(); 
+}
 
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+
+var currentCourse = {
+	name: null, 
+	potentialStudents: [],
+	confirmedStudents: [],
+	requested: 'newCourse',
+	reset: function(){
+		this.name = null; 
+		this.potentialStudents = [];
+		this.confirmedStudents = [];
+		this.requested = 'newCourse';
+	}
+}
 
 
