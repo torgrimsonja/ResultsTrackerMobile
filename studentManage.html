@@ -1,6 +1,12 @@
 <div data-role="page" id="studentManage-landing" data-rel="back">
 	<script src="js/studentManage.js"></script>
+	<style> 
+	.ui-dialog  .ui-header .ui-btn-icon-notext{ 
+		display: none;
+	}
+	</style> 
 	<div data-role="header" style="height: 50px;"> 
+		<a data-role="button" href="#addStudent-popup" data-rel="popup" >Add Student</a>
 	</div> 
 	<div data-role="content" id="studentManage-content">
 		<ul data-role="listview" data-filter="true" data-autodividers="true" id="studentList"></ul>
@@ -8,6 +14,16 @@
 		<input type="button" value="Cancel" onclick="cancel()" />
 	</div>
 	<div data-role="footer" data-position="fixed"></div>
+	
+	<div data-role="popup" id="addStudent-popup" >
+		<input type="text" placeholder="First Name" id="fName" />
+		<input type="text" placeholder="Last Name" id="lName" />
+		<div>Male <input type="radio" name="gender" value= "Male" id="genderM" data-role="none" checked/></div>
+		<div>Female <input type="radio" name="gender" value= "Female" id="genderF" data-role="none" /></div>
+		<input type="date"  id="dob" />
+		<p id="errorBox" style="color: red;"></p>
+		<input type="button" onclick="saveNewStudent()" id="saveButton" value="Save" />
+	</div>
 </div>
 
 

@@ -25,7 +25,6 @@ function auth(uname, pword){
 				$.mobile.pushStateEnabled = true;
 				if(loggedOutRecently) $.mobile.changePage('index.html');
 				$('#login-landing').dialog('close');
-				$.mobile.pushStateEnabled = false; 
 															//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);

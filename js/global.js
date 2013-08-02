@@ -14,6 +14,7 @@ var start = {
 	 */ 
 	onLoad : function() {
 		$(document).one('databaseready', checkId);
+		$('#index-landing').on("pageshow", resetCourse);
 		if (navHas('Android')) {
 			$('#sqlPlugin').attr("src","js/external/SQLitePluginAndroid.js");
 			//on Android platform with PhoneGap
@@ -223,6 +224,8 @@ Array.prototype.remove = function(from, to) {
   this.length = from < 0 ? this.length + from : from;
   return this.push.apply(this, rest);
 };
+
+function resetCourse(){	currentCourse.reset();	}
 
 var currentCourse = {
 	name: null, 

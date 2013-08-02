@@ -61,6 +61,7 @@ function createStudentView(response, type){
 					$.mobile.changePage("student.html");
 				});
 				var columnOfInterest;  
+				//Note: this would be a bit faster if we narrowed down the attempts processed to only those with the maximum or minimum (depending on the task) values. Currently, all task attempts get the same treatment. 
 				if(response.course_student_task_attempt != undefined){
 					for(var i=0; i<response.course_student_task_attempt.length; i++){
 						var thisAttempt = response.course_student_task_attempt[i]; 
@@ -99,6 +100,7 @@ function createStudentView(response, type){
 }
 
 function secondsFromTime(timeStr){
+	if(timeStr.search(':') < 0) return parseFloat(timeStr); //shuttle run edge case 
 	return (parseInt(timeStr.substring(0,2)) * 60) + parseInt(timeStr.substring(3,5));
 }
 

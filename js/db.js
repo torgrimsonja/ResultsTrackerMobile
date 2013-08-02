@@ -282,7 +282,6 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			courseId = keyvalue[3].value; 
 			qs.addQuery("SELECT `gender`, `dateOfBirth`, `id` FROM `student` WHERE `firstName` = '"+studentName[0]+"' AND `lastName` = '"+studentName[1]+"' AND `deleted` = 'false'", "studentData"); 
 			qs.triggerStack(function(data){
-				console.log("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' AND `deleted` = 'false' LIMIT 1", "course_student_id");
 				qs.addQuery("SELECT `id` FROM `course_student` WHERE `student_id` = '"+data.studentData[0].id+"' AND `course_id` = '"+courseId+"' AND `deleted` = 'false' LIMIT 1", "course_student_id");
 				qs.triggerStack(function(data){
 					qs.addQuery("SELECT cast(((SELECT julianday('now') - julianday('"+data.studentData[0].dateOfBirth+"'))/365) as int) AS yearsOld", "dateData");
@@ -314,14 +313,31 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 						if(data.hasOwnProperty('course_student')){
 							for(var i=0; i<data.course_student.length; i++){
 								if(courseProvided != 'new' && data.course_student[i].course_id == courseProvided) qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student_in"); 
-								else qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student_out"); 
 							}
+							qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `user_id` = '"+userId+"' AND `deleted` = 'false'", "student_out"); 
 							qs.triggerStack(function(data){call(data);}); 
 						}
 					});
 				}
 			});
-		}	
+		} else if (data.search("requested=insertNewStudent") > -1){
+			var keyvalue = this.getArgs(data),
+			firstName = keyvalue[0].value,
+			lastName = keyvalue[1].value,
+			gender = keyvalue[2].value,
+			dob = keyvalue[3].value,
+			errors = [];
+			if(!(/^[A-z0-9_\-'" ]{1,255}$/.test(firstName))) errors.push("firstName");
+			if(!(/^[A-z0-9_\-'" ]{1,255}$/.test(lastName))) errors.push("lastName");
+			if(!(/^(Fem|M)ale$/.test(gender))) errors.push("gender");
+			if(!(Math.abs(new Date(dob).getTime())>0)) errors.push("date");
+			if(errors.length>0) call({error: true, errors: errors}); 
+			else {
+				qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
+				"((SELECT MAX(`id`+0)+1 FROM `student`), '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
+				qs.triggerStack(function(data){call({error: false})});
+			}
+		}		
 	} else {
 		if(data.hasOwnProperty("requested") && data.requested == "newCourse"){
 			qs.addQuery("INSERT INTO `course` (`id`, `user_id`, `name`, `active`, `timestamp`) VALUES ( (SELECT MAX(`id`+0) + 1 FROM `course`), '"+user.id+"', '"+data.name+"' , '1', '"+buildTimeString()+"')",'lol');
