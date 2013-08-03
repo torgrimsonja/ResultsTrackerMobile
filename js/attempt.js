@@ -43,7 +43,32 @@ function getPage(taskname, students, type){
 	.append($('<h1>'+taskname+'<h1>'));
 	for(var i=0; i<students.student.length; i++){
 		toRet.append($('<div class="studentInput"><span class="studentName">'+students.student[i].firstName+' '+students.student[i].lastName+'</span>'+getInput(type + ' ' + taskname)+'</div>'));
-	} return toRet.append($('<input type="button" onclick="storeData($(this), \''+taskname+'\', \''+type+' '+taskname+'\')" value="Save"/>')); 
+	} 
+	//There's certainly a better way to do this, but...
+	//Sorts first by last name, then first name
+	/*
+	var listitems = toRet.children('.studentInput').get();
+	listitems.sort(function(a, b) {
+		return  $(a).children('span.studentName').text().split(' ')[1].toUpperCase().localeCompare($(b).children('span.studentName').text().split(' ')[1].toUpperCase());
+	});
+	$.each(listitems, function(idx, itm) { toRet.append($(itm).attr("data-letter",$(itm).children('span.studentName').text().split(' ')[1][0])); });
+	
+	var sortedLetters = [];
+	listitems = toRet.children('.studentInput').get();
+	$.each(listitems, function(idx, itm){ if(sortedLetters.indexOf($(itm).attr("data-letter")) < 0){
+			sortedLetters.push($(itm).attr("data-letter"));
+			var toSort = [];
+			$.each(listitems, function(idx2, itm2){ if($(itm).attr("data-letter") == $(itm2).attr("data-letter")) toSort.push(itm2); });
+			toSort.sort(function(a, b) {
+				return  $(a).children('span.studentName').text().split(' ')[0].toUpperCase().localeCompare($(b).children('span.studentName').text().split(' ')[0].toUpperCase());
+			});
+			$.each(toSort, function(idx, itm) { toRet.append(itm)});
+		}
+	}); */
+	
+	dualSort(toRet.children('.studentInput'), function(el){ return $(el).children('span.studentName').text(); }, toRet); 
+	
+	return toRet.append($('<input type="button" onclick="storeData($(this), \''+taskname+'\', \''+type+' '+taskname+'\')" value="Save"/>')); 
 }
 
 /**

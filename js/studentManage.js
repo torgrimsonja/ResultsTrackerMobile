@@ -24,6 +24,7 @@ $('#studentManage-landing').on("pagebeforeshow", function(){
 function getStudentList(){
 	temporaryCourse.getFromCurrent();
 	db.localQuery('requested=assocStudents&userId='+user.id+'&course='+courseToLoad, function(response){
+		console.log(response);
 		if(!response.error){
 			if(response.hasOwnProperty("student_in")){
 				for(var i=0; i<response.student_in.length; i++){
@@ -87,7 +88,7 @@ function saveStudents(){
 	currentCourse = temporaryCourse;
 	if(courseToLoad == 'new'){
 		$("#studentManage-landing").dialog('close');	
-		currentCourse.reset(); 
+		temporaryCourse.reset(); 
 	} else {
 		currentCourse.requested = "editStudents";
 		db.localQuery(currentCourse, function(data){

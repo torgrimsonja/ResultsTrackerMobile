@@ -75,7 +75,6 @@ resultsDatabase.prototype.checkIfLoaded = function(download){
 resultsDatabase.prototype.downloadServer = function(){
 	console.log("downloading db...");
 	var ref = this; 
-	$('body').append($('<div id="clickBlocker"></div>'));
 	$.mobile.loading( "show", {
 		text: "Syncing database...",
 		textVisible: true,
@@ -111,7 +110,7 @@ resultsDatabase.prototype.syncResponse = function(response){
 		}
 		var d = new Date(); 
 		qs.addQuery("INSERT INTO `device` (`prop_name`,`prop_value`) VALUES ('last_sync', '"+buildTimeString()+"')",'none'); 
-		qs.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); $(document).trigger("databaseready"); listCourses();});
+		qs.triggerStack(function(data){$.mobile.loading("hide"); $(document).trigger("databaseready"); listCourses();});
 	}
 }
 
@@ -161,14 +160,11 @@ resultsDatabase.prototype.updateResponse = function(response){
 			}
 		}
 		qs.addQuery("UPDATE `device` SET `prop_value` = '"+buildTimeString()+"' WHERE `prop_name` = 'last_sync'",'lol');
-		//db.trimDatabase(); 
-		qs.triggerStack(function(data){$.mobile.loading("hide"); $('#clickBlocker').css("display","none"); console.log("db updated");});
+		qs.triggerStack(function(data){$.mobile.loading("hide"); console.log("db updated");});
 	}
 }
 
 resultsDatabase.prototype.sync = function(){
-	//$('body').append($('<div id="clickBlocker"></div>'));
-
 	db.getChanges(function(data){syncEverythingBecauseNathanIsAwesomeAndLikesLongFunctionNames(data.syncData[0].prop_value, stringifyEveryTable(data), function(x){db.updateResponse(x);});}); 
 }
 
@@ -306,19 +302,19 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			userId = keyvalue[0].value,
 			courseProvided = keyvalue[1].value; 
 			qs.addQuery("SELECT `id` FROM `course` WHERE `user_id` = '"+userId+"' AND `active` = '1'",'course');
-			qs.triggerStack(function(data){
-				if(data.hasOwnProperty('course')){
-					for(var i=0; i<data.course.length; i++) qs.addQuery("SELECT `student_id`, `course_id` FROM `course_student` WHERE `course_id` = '"+data.course[i].id+"' AND `deleted` = 'false'","course_student"); 
-					qs.triggerStack(function(data){
-						if(data.hasOwnProperty('course_student')){
-							for(var i=0; i<data.course_student.length; i++){
-								if(courseProvided != 'new' && data.course_student[i].course_id == courseProvided) qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student_in"); 
+			qs.triggerStack(function(d){
+				if(d.hasOwnProperty('course')){
+					for(var i=0; i<d.course.length; i++) qs.addQuery("SELECT `student_id`, `course_id` FROM `course_student` WHERE `course_id` = '"+d.course[i].id+"' AND `deleted` = 'false'","course_student"); 
+					qs.triggerStack(function(d){
+						if(d.hasOwnProperty('course_student')){
+							for(var i=0; i<d.course_student.length; i++){
+								if(courseProvided != 'new' && d.course_student[i].course_id == courseProvided) qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `id` = '"+d.course_student[i].student_id+"' AND `deleted` = 'false'", "student_in"); 
 							}
-							qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `user_id` = '"+userId+"' AND `deleted` = 'false'", "student_out"); 
-							qs.triggerStack(function(data){call(data);}); 
 						}
+						qs.addQuery("SELECT DISTINCT * FROM `student` WHERE `user_id` = '"+userId+"' AND `deleted` = 'false'", "student_out"); 
+						qs.triggerStack(function(d2){call(d2);}); 
 					});
-				}
+				} 
 			});
 		} else if (data.search("requested=insertNewStudent") > -1){
 			var keyvalue = this.getArgs(data),
@@ -333,11 +329,32 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 			if(!(Math.abs(new Date(dob).getTime())>0)) errors.push("date");
 			if(errors.length>0) call({error: true, errors: errors}); 
 			else {
-				qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
-				"((SELECT MAX(`id`+0)+1 FROM `student`), '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
-				qs.triggerStack(function(data){call({error: false})});
+				qs.addQuery("SELECT * FROM `student` WHERE 1", "rowCheck");
+				qs.triggerStack(function(d){
+					if(d.hasOwnProperty("rowCheck")){
+						qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
+						"((SELECT MAX(`id`+0)+1 FROM `student`), '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
+						qs.triggerStack(function(data){call({error: false})});
+					} else {
+						qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
+						"('1', '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
+						qs.triggerStack(function(data){call({error: false})});
+					}
+				});
 			}
-		}		
+		} else if (data == 'requested=deviceId'){
+			qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'device_id'", "device_id");
+			qs.triggerStack(function(d){
+				if(d.hasOwnProperty('device_id')){
+					call({error: false, deviceId: d.device_id[0].prop_value});
+				} else {
+					deviceRegisterSync(function(success, id){
+						if(success) call({error: false, deviceId: id});
+						else call({error: true});
+					});
+				}
+			});
+		}
 	} else {
 		if(data.hasOwnProperty("requested") && data.requested == "newCourse"){
 			qs.addQuery("INSERT INTO `course` (`id`, `user_id`, `name`, `active`, `timestamp`) VALUES ( (SELECT MAX(`id`+0) + 1 FROM `course`), '"+user.id+"', '"+data.name+"' , '1', '"+buildTimeString()+"')",'lol');

@@ -16,7 +16,7 @@ function saveCourse(){
 }
 
 function cancelCourse(){
-
+	$('#addCourse-landing').dialog('close');
 }
 
 function manageStudents(){

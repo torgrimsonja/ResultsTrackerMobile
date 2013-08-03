@@ -164,6 +164,13 @@ function deviceRegister(){
 	}).error(function() { console.log('Device registration failed.'); });
 }
 
+function deviceRegisterSync(callback){
+	$.post(REMOTE_PATH + 'mobile_app/device_registration.php', {'deviceType' : detectDevice(), 'timestamp' : new Date().getTime()}, function(data) {
+		data = JSON.parse(data);
+		db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('device_id', "+data.deviceID+")", function(){ callback(true, data.deviceID); }); 
+	}).error(function() { callback(false, null); });
+}
+
 /**
  * Gets all the changes in the database since the last sync. 
  * @author Nathan Eliason
@@ -240,4 +247,31 @@ var currentCourse = {
 	}
 }
 
+/**
+ * Sorts by first name, then last name assuming that a name is formatted like "Joseph Higgins" with a space in between first and last name and no funny stuff.
+ * Makes use of a ton of jQuery/DOM stuff, including storing some data in data-attribute that is stripped at the end. 
+ * @param {jq object} list - The actual list of elements to be sorted. Examples: $('ul.sortMe'), $('table').find('tbody tr')
+ * @param {function} getTextFromItem - A function that, given one list item, returns the name being sorted as a string. Example: function(el){ return $(el).children('.students').text(); }
+ * @param {jq object} container - The base DOM element that the list will be appended to after being sorted. 
+ */
+
+function dualSort(list, getTextFromItem, container){
+	listitems = list.get();
+	listitems.sort(function(a, b) {
+		return  getTextFromItem(a).split(' ')[1].toUpperCase().localeCompare(getTextFromItem(b).split(' ')[1].toUpperCase());
+	});
+	$.each(listitems, function(idx, itm) { container.append($(itm).attr("data-letter",getTextFromItem(itm).split(' ')[1][0])); });
+	var sortedLetters = [];
+	listitems = list.get();
+	$.each(listitems, function(idx, itm){ if(sortedLetters.indexOf($(itm).attr("data-letter")) < 0){
+			sortedLetters.push($(itm).attr("data-letter"));
+			var toSort = [];
+			$.each(listitems, function(idx2, itm2){ if($(itm).attr("data-letter") == $(itm2).attr("data-letter")) toSort.push(itm2); });
+			toSort.sort(function(a, b) {
+				return  getTextFromItem(a).split(' ')[0].toUpperCase().localeCompare(getTextFromItem(b).split(' ')[0].toUpperCase());
+			});
+			$.each(toSort, function(idx, itm) { container.append($(itm).removeAttr("data-letter")); });
+		}
+	});
+}
 

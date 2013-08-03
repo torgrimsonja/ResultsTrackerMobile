@@ -41,18 +41,18 @@ function auth(uname, pword){
 function reg(){
 	var valid = true,
 	
-	userValidated = /[A-z0-9_\-]{3,200}/.exec($('#regUsername').val());
+	userValidated = /^[A-z0-9_\-]{3,200}$/.exec($('#regUsername').val());
 	if(userValidated !== null && userValidated[0] === userValidated.input) console.log("username valid"); 
 	else { $('#regUsernameError').text("Invalid username. Allowed characters: A-z0-9_-"); valid = false; } 
 	
-	var regPass1Validated = /(.{6,3000}) | (.)/.exec($('#regPass1').val()); 
+	var regPass1Validated = /^(.{6,3000})|(.)$/.exec($('#regPass1').val()); 
 	if(regPass1Validated !== null && regPass1Validated[0] === regPass1Validated.input){
 		if(regPass1Validated[0] === $('#regPass2').val()) ("password valid and matching");
 		else { $('#regPasswordError').text("Passwords do not match."); valid = false; }
 	}
 	else { $('#regPasswordError').text("Invalid password. Passwords must be 6 to 32 characters long."); valid = false; }
 	
-	var emailValidated = /[A-z0-9._%+-]+@[A-z0-9.-]+\.[A-z]{2,4}/.exec($('#regEmail').val()); 
+	var emailValidated = /^[A-z0-9._%+-]+@[A-z0-9.-]+\.[A-z]{2,4}$/.exec($('#regEmail').val()); 
 	if(emailValidated !== null && emailValidated[0] === emailValidated.input) console.log("email valid"); 
 	else { $('#regEmailError').text("Please use a valid email address."); valid = false; }
 	
@@ -65,13 +65,20 @@ function reg(){
 	else { $('#regLastNameError').text("That last name was not what we were expecting."); valid = false; }
 	
 	if(valid){
-		$.ajax({
-			url: REMOTE_PATH+'mobile_app/account_registration.php',
-			success: function(data, status, jqXHR) {
-				registrationResponse($.parseJSON(jqXHR.responseText)); 
-			},
-			type: 'POST',
-			data: 'username='+userValidated[0]+'&password='+hex_sha1(regPass1Validated[0])+'&email='+emailValidated[0]+'&firstName='+firstNameValidated[0]+'&lastName='+lastNameValidated[0]+'&timestamp='+(new Date().getTime())
+		$('#regButton').parent().find('.ui-btn-inner').css("background-color","lightgreen").find('.ui-btn-text').html('Submitting...'); 
+		db.localQuery("requested=deviceId", function(response){
+			if(!response.error){
+				console.log(response);
+				$.ajax({
+					url: REMOTE_PATH+'mobile_app/account_registration.php',
+					success: function(data, status, jqXHR) {
+						registrationResponse($.parseJSON(jqXHR.responseText)); 
+					},
+					type: 'POST',
+					data: 'username='+userValidated[0]+'&password='+hex_sha1(regPass1Validated[0])+'&email='+emailValidated[0]+'&firstName='+firstNameValidated[0]+'&lastName='+lastNameValidated[0]+'&timestamp='+(new Date().getTime())+
+						'&deviceID='+response.deviceId
+				});
+			}
 		});
 	}
 }
@@ -90,6 +97,7 @@ function registrationSuccess(){
 	$('#register').children('div[role|="dialog"]').html("<div data-role=\"content\"><h1 style=\"color: white;\"> Success! </h1></div>"); 
 	setTimeout(function(){
 		$('#register').dialog('close');
+		$('#regButton').parent().find('.ui-btn-inner').css("background-color","").find('.ui-btn-text').html('submit'); 
 	}, 2000);
 }
 

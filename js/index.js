@@ -37,7 +37,6 @@ function asyncListCourses(response, type){
 			$('#addBtn').trigger('create');
 			$('#addBtnAnch').children('span').css("background-color","lightblue");
 		}
-		$('#clickBlocker').css("display","none");
 	}
 }
 
