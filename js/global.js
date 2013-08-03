@@ -14,8 +14,13 @@ var start = {
 	 */ 
 	onLoad : function() {
 		$(document).one('databaseready', checkId);
+		$(document).on('resume',listCourses);
+		 document.addEventListener("deviceready", function(){
+			 start.onStartUp();
+		 },true);
 		$('#index-landing').on("pageshow", resetCourse);
 		if (navHas('Android')) {
+			console.log('isAndroid');
 			$('#sqlPlugin').attr("src","js/external/SQLitePluginAndroid.js");
 			//on Android platform with PhoneGap
 			//TODO: include Android version of cordova.js & SQLitePlugin.js	
@@ -27,7 +32,7 @@ var start = {
 			 */
 			 this.phoneGapInit();
 		} else if (navHas('iPhone') || navHas('iPod') || navHas('iPad')) {
-			$('#sqlPlugin').attr("src","js/external/SQLitePluginAndroid.js");
+			$('#sqlPlugin').attr("src","js/external/SQLitePluginiOS.js");
 			//on iOS platform with PhoneGap
 			//TODO: include iOS version of cordova.js & SQLitePlugin.js	
 			this.phoneGapInit();
@@ -41,9 +46,7 @@ var start = {
 		 * @return {boolean} - true if the OS name is found, false otherwise
 		 */
 		
-		function navHas(string) {
-			return (navigator.userAgent.indexOf(string) > -1) ? true : false;	
-		}
+		
 	},
 	
 	/**
@@ -65,8 +68,9 @@ var start = {
 	 */
 	 
 	phoneGapInit : function() {
+		console.log('initing phonegap');
 		isPhoneGap = true; 
-		$(document).one('deviceready', onStartUp);
+	
 	},
 	
 	/**
@@ -75,10 +79,21 @@ var start = {
 	 */ 
 	 
 	onStartUp : function() {
+		console.log("device is ready");
 		//Global initialization functions here
 		start.fixjQuery();
 		db = new resultsDatabase(); 
 		db.initDb();	
+	}
+};
+
+var reader = new FileReader();
+
+reader.onloadend = function(evt) {
+	if(evt.target.result == null) {
+		console.log("file does not exist");
+	} else {
+		console.log("file does exist!");
 	}
 };
 
@@ -144,7 +159,7 @@ function reactToId(exists){
 			setInterval(function(){ sync(false); }, 300000); 
 			if(new Date(buildTimeString()).getTime() -  new Date(data.last_sync[0].prop_value).getTime() > 300000) sync(true);
 		} else {
-			$('#openLogin').click(); 
+			//$('#openLogin').click(); 
 		}
 	});
 	else {
@@ -274,4 +289,9 @@ function dualSort(list, getTextFromItem, container){
 		}
 	});
 }
+
+function navHas(string) {
+	return (navigator.userAgent.indexOf(string) > -1) ? true : false;	
+}
+ 
 

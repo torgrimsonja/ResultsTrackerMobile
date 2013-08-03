@@ -4,6 +4,10 @@
 	padding: 0; 
 }
 
+div {
+	display: block;
+}
+
 #clickBlocker {
 	width: 100%;
 	height: 100%;

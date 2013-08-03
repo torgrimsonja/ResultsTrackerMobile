@@ -13,7 +13,7 @@ function auth(uname, pword){
 		url: REMOTE_PATH+'mobile_app/check_credentials.php',
 		crossDomain: true,
 		beforeSend : function() {$.mobile.loading('show')},
-		complete   : function() {$.mobile.loading('hide')},
+		complete   : function() {},
 		success: function(data, status, jqXHR) {
 			user.authed = $.parseJSON(jqXHR.responseText).authenticated ? true : false; 
 			if(!user.authed) submitForm(true); 
@@ -22,16 +22,16 @@ function auth(uname, pword){
 				user.username = uname; 
 				user.id = $.parseJSON(jqXHR.responseText).id;
 				db.checkIfLoaded(true); 
-				$.mobile.pushStateEnabled = true;
-				if(loggedOutRecently) $.mobile.changePage('index.html');
-				$('#login-landing').dialog('close');
+				//$.mobile.pushStateEnabled = true;
+				//if(loggedOutRecently) $.mobile.changePage('index.html');
+				
 															//insert magic algorithm
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('passHash', '"+user.passHash+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('username', '"+user.username+"')", defaultCallback);
 				db.query("INSERT INTO `device` (`prop_name`, `prop_value`) VALUES ('userId', '"+$.parseJSON(jqXHR.responseText).id+"')", defaultCallback);
 			}
 		},
-		error: function(jqXHR){ console.log(jqXHR); console.log(JSON.stringify(jqXHR)); },
+		error: function(jqXHR){ console.log("Error in authentication function."); },
 		type: 'POST',
 		data: {username: uname, password: hex_sha1(pword) }
 	});
@@ -40,29 +40,38 @@ function auth(uname, pword){
 
 function reg(){
 	var valid = true,
-	
 	userValidated = /^[A-z0-9_\-]{3,200}$/.exec($('#regUsername').val());
-	if(userValidated !== null && userValidated[0] === userValidated.input) console.log("username valid"); 
-	else { $('#regUsernameError').text("Invalid username. Allowed characters: A-z0-9_-"); valid = false; } 
+	if( !(userValidated !== null && userValidated[0] === userValidated.input) ){
+		$('#regUsernameError').text("Invalid username. Allowed characters: A-z0-9_-"); 
+		valid = false; 
+	}
 	
 	var regPass1Validated = /^(.{6,3000})|(.)$/.exec($('#regPass1').val()); 
 	if(regPass1Validated !== null && regPass1Validated[0] === regPass1Validated.input){
-		if(regPass1Validated[0] === $('#regPass2').val()) ("password valid and matching");
-		else { $('#regPasswordError').text("Passwords do not match."); valid = false; }
+		if( !(regPass1Validated[0] === $('#regPass2').val()) ){
+			$('#regPasswordError').text("Passwords do not match."); 
+			valid = false; 
+		}
 	}
 	else { $('#regPasswordError').text("Invalid password. Passwords must be 6 to 32 characters long."); valid = false; }
 	
 	var emailValidated = /^[A-z0-9._%+-]+@[A-z0-9.-]+\.[A-z]{2,4}$/.exec($('#regEmail').val()); 
-	if(emailValidated !== null && emailValidated[0] === emailValidated.input) console.log("email valid"); 
-	else { $('#regEmailError').text("Please use a valid email address."); valid = false; }
+	if(!(emailValidated !== null && emailValidated[0] === emailValidated.input)){
+		$('#regEmailError').text("Please use a valid email address."); 
+		valid = false; 
+	}
 	
 	var firstNameValidated = /^([ \u00c0-\u01ffa-zA-Z'\-])+$/.exec($('#regFirstName').val()); 
-	if(firstNameValidated !== null && firstNameValidated[0] === firstNameValidated.input) console.log("first name valid"); 
-	else { $('#regFirstNameError').text("That first name was not what we were expecting."); valid = false; }
+	if(!(firstNameValidated !== null && firstNameValidated[0] === firstNameValidated.input)){
+		$('#regFirstNameError').text("That first name was not what we were expecting."); 
+		valid = false; 
+	}
 	
 	var lastNameValidated = /^([ \u00c0-\u01ffa-zA-Z'\-])+$/.exec($('#regLastName').val()); 
-	if(lastNameValidated !== null && lastNameValidated[0] === lastNameValidated.input) console.log("last name valid"); 
-	else { $('#regLastNameError').text("That last name was not what we were expecting."); valid = false; }
+	if(!(lastNameValidated !== null && lastNameValidated[0] === lastNameValidated.input)){ 
+		$('#regLastNameError').text("That last name was not what we were expecting."); 
+		valid = false; 
+	}
 	
 	if(valid){
 		$('#regButton').parent().find('.ui-btn-inner').css("background-color","lightgreen").find('.ui-btn-text').html('Submitting...'); 

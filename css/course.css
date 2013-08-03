@@ -26,3 +26,23 @@
 #buttons {
 	padding: 25px;
 }
+
+#studentTable {
+	position: relative;
+	margin: 0;
+	white-space: normal;
+	line-height: normal;
+	font-weight: normal;
+	font-size: medium;
+	font-variant: normal;
+	font-style: normal;
+	color: -webkit-text;
+	display: table;
+	border-spacing: 2px;
+	border-collapse: collapse;
+	padding: 0;
+}
+
+#students{
+	display: block;
+}

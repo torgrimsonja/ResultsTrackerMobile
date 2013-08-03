@@ -87,9 +87,10 @@ function createStudentView(response, type){
 					} 
 				}
 				
-				$('#buttons').append($('<input type="button" value="Start New Task" />').on("click", function(){ $.mobile.changePage('attempt.html'); }));
+				$('#buttons').append($('<input type="button" value="Start New Task" />').on("click", function(){  $.mobile.changePage('attempt.html'); }));
 				dualSort($('#studentTable').find('tbody tr'), function(el){ return $(el).children('.students').text(); }, $('#studentTable'));
 				$('#course-landing-content').trigger('create');
+				$('#studentTable').css("width", (window.innerWidth-100));
 			} else {
 				$('#studentTable').remove();
 				$('#buttons').append($('<h2>No students have been added to this course.</h2>'));
