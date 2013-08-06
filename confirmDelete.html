@@ -1,0 +1,12 @@
+<div data-role="page" id="confirmDelete" >
+	<script> 
+	function yes(){confirmedDelete(); $('#confirmDelete').dialog('close');}
+	
+	function no(){$('#confirmDelete').dialog('close');}
+	</script>
+	<div data-role="content">
+		<h2>Are you sure you want to delete this course?</h2>
+		<input type="button" value="Yes" onclick="yes()" />
+		<input type="button" value="No" onclick="no()" />
+	</div>
+</div>

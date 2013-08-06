@@ -4,7 +4,7 @@
  */
 
 var resultsDatabase = function() {
-	this.db, this.complete = false, this.createAsync = 0, this.syncingTables = ['course','course_student','course_student_task_attempt','course_task','student','task','task_type'];
+	this.db, this.complete = false, this.createAsync = 0, this.syncingTables = ['course','course_student','course_student_task_attempt','student','task','task_type'];
 }
 
 /**
@@ -198,12 +198,10 @@ resultsDatabase.prototype.dumpDbInConsole = function(){
  * Runs a series of iterative queries based on a keyword. For example, providing 'requested=students' will go through all steps needed to get 
  * a list of students from the database and calls the callback with the results. ASYNC 
  * @param {string} data - Intended to mimic a POST/GET key->value pair, such that an identical query could be run on the master server proper. Should look like "requested=whatever".
- * @param {function} callback - Function to be called with the results. 
+ * @param {function} call - Function to be called with the results. 
  */ 
 
-resultsDatabase.prototype.localQuery = function(data, callback){
-	var call = callback; //I use the name "callback" elsewhere
-	var ref = this; //I keep this reference around to use prototype methods deeper in
+resultsDatabase.prototype.localQuery = function(data, call){
 	var qs = new queryStack(this);
 	if(typeof data == 'string'){
 		if(data == "requested=coursename"){ //This query is run on the index page. It simply gets the course names and ids
@@ -214,11 +212,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 		}
 		else if(data.search("requested=students") > -1){ //this string will probably look like "requested=students&id=1", so I can't just match it
 			var keyvalue = this.getArgs(data); 
-			qs.addQuery("SELECT DISTINCT `student_id`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"' AND `deleted` = 'false'", "course_student");
+			qs.addQuery("SELECT DISTINCT `student_id`, `student_code`, `id` FROM `course_student` WHERE `course_id` = '"+keyvalue[0].value+"' AND `deleted` = 'false'", "course_student");
 			qs.triggerStack(function(data){
 				if(data.course_student != undefined){
 					for(var i=0; i<data.course_student.length; i++){
-						qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `id` = '"+data.course_student[i].student_id+"' AND `deleted` = 'false'", "student");
+						qs.addQuery("SELECT DISTINCT `firstName`, `lastName`, `code`, `id` FROM `student` WHERE `code` = '"+data.course_student[i].student_code+"' AND `deleted` = 'false'", "student");
 						qs.addQuery("SELECT `task_id`, `value`, `course_student_id` FROM `course_student_task_attempt` WHERE `course_student_id` = '"+data.course_student[i].id+"'", "course_student_task_attempt"); 
 					}
 				}
@@ -328,11 +326,11 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 				qs.triggerStack(function(d){
 					if(d.hasOwnProperty("rowCheck")){
 						qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
-						"((SELECT MAX(`id`+0)+1 FROM `student`), '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
+						"((SELECT MAX(`id`+0)+1 FROM `student`), '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', '"+parseInt(Math.random()*10000000)+"', 'false', '"+buildTimeString()+"')",'none'); 
 						qs.triggerStack(function(data){call({error: false})});
-					} else {
+					} else { //select max `id` returns undef if there are no rows in `student` 
 						qs.addQuery("INSERT INTO `student` (`id`, `user_id`, `firstName`, `lastName`, `gender`, `dateOfBirth`, `code`, `deleted`, `timestamp`) VALUES "+
-						"('1', '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', 'sdaf', 'false', '"+buildTimeString()+"')",'none'); 
+						"('1', '"+user.id+"', '"+firstName+"', '"+lastName+"', '"+gender+"', '"+dob+"', '"+parseInt(Math.random()*10000000)+"', 'false', '"+buildTimeString()+"')",'none'); 
 						qs.triggerStack(function(data){call({error: false})});
 					}
 				});
@@ -349,7 +347,18 @@ resultsDatabase.prototype.localQuery = function(data, callback){
 					});
 				}
 			});
+		} else if (data.search('requested=deleteCourse') > -1){
+			var keyvalue = this.getArgs(data),
+			id = keyvalue[0].value; 
+			qs.addQuery("UPDATE `course` SET `active` = '0', `timestamp` = '"+buildTimeString()+"' WHERE `id` = '"+id+"'",'lol');
+			qs.triggerStack(function(d){call(d);});
+		} else if (data.search('requested=deleteStudent') > -1){ 
+			var keyvalue = this.getArgs(data),
+			studentCode = keyvalue[0].value; console.log(keyvalue);
+			qs.addQuery("UPDATE `student` SET `deleted` = 'true', `timestamp` = '"+buildTimeString()+"' WHERE `code` = '"+studentCode+"'",'lol'); 
+			qs.triggerStack(function(d){call(d);}); 
 		}
+		
 	} else {
 		if(data.hasOwnProperty("requested") && data.requested == "newCourse"){
 			qs.addQuery("INSERT INTO `course` (`id`, `user_id`, `name`, `active`, `timestamp`) VALUES ( (SELECT MAX(`id`+0) + 1 FROM `course`), '"+user.id+"', '"+data.name+"' , '1', '"+buildTimeString()+"')",'lol');
@@ -390,7 +399,7 @@ resultsDatabase.prototype.getChanges = function(call){
 	qs.addQuery("SELECT `prop_value` FROM `device` WHERE `prop_name` = 'last_sync' LIMIT 1", "syncData"); 
 	qs.triggerStack(function(data){
 		for(var i=0; i<db.syncingTables.length; i++) qs.addQuery("SELECT * FROM `"+db.syncingTables[i]+"` WHERE (SELECT strftime('%s',`timestamp`)) > (SELECT strftime('%s','"+data.syncData[0].prop_value+"'))",db.syncingTables[i]); 
-		qs.triggerStack(function(data){call(data); }); 
+		qs.triggerStack(function(data){call(data);}); 
 	}); }, 1000);
 }
 

@@ -7,6 +7,7 @@
 	</style> 
 	<div data-role="header" style="height: 50px;"> 
 		<a data-role="button" href="#addStudent-popup" data-rel="popup" >Add New Student</a>
+		<a data-role="button" href="#deleteStudent-popup" data-rel="popup" >Delete Student</a>
 	</div> 
 	<div data-role="content" id="studentManage-content">
 		<ul data-role="listview" data-filter="true" data-autodividers="true" id="studentList"></ul>
@@ -24,6 +25,15 @@
 		<p id="errorBox" style="color: red;"></p>
 		<input type="button" onclick="saveNewStudent()" id="saveButton" value="Save" />
 	</div>
+	
+	<div data-role="popup" id="deleteStudent-popup" >
+		<script>$('#deleteStudent-popup').on('popupafteropen', function(){ getDeleteStudentList(); });</script>
+		<div data-role="content">
+			<ul data-role="listview" data-filter="true" data-autodividers="true" id="deleteStudentList"></ul>
+		</div>
+	</div>
+	
+	<div data-role="popup"
 </div>
 
 

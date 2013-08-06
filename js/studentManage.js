@@ -15,7 +15,7 @@ var temporaryCourse = {
 		this.confirmedStudents = currentCourse.confirmedStudents;
 		this.requested = currentCourse.requested;
 	}
-}
+};
 
 $('#studentManage-landing').on("pagebeforeshow", function(){
 	getStudentList(); 
@@ -24,7 +24,6 @@ $('#studentManage-landing').on("pagebeforeshow", function(){
 function getStudentList(){
 	temporaryCourse.getFromCurrent();
 	db.localQuery('requested=assocStudents&userId='+user.id+'&course='+courseToLoad, function(response){
-		console.log(response);
 		if(!response.error){
 			if(response.hasOwnProperty("student_in")){
 				for(var i=0; i<response.student_in.length; i++){
@@ -136,4 +135,57 @@ function saveNewStudent(){
 		}
 		$('#saveButton').parent().find('.ui-btn-inner').css("background-color","").parent().find('.ui-btn-text').html('Save');
 	});
+}
+
+function getDeleteStudentList(){
+	var inList = []; 
+	
+	$('#deleteStudentList').html('');
+	db.localQuery('requested=assocStudents&userId='+user.id+'&course='+courseToLoad, function(response){ console.log(response);
+		if(response.hasOwnProperty("student_in")){
+			for(var i=0; i<response.student_in.length; i++){
+				var thisStudent = response.student_in[i], found = false; 
+				if(inList.indexOf(thisStudent.code) < 0){
+					inList.push(thisStudent.code); 
+					$('#deleteStudentList').append($('<li data-index="'+inList.indexOf(thisStudent.code)+'" >'+response.student_in[i].firstName+' '+response.student_in[i].lastName+'</li>').one("click", function(){
+						listDeleteClick($(this), inList);
+						console.log(thisStudent.code);
+					}));
+				}
+			}
+		}
+		
+		if(response.hasOwnProperty("student_out")){
+			for(var i=0; i<response.student_out.length; i++){
+				var thisStudent = response.student_out[i], found = false; 
+				if(inList.indexOf(thisStudent.code) < 0){
+					inList.push(thisStudent.code); 
+					$('#deleteStudentList').append($('<li data-index="'+inList.indexOf(thisStudent.code)+'">'+response.student_out[i].firstName+' '+response.student_out[i].lastName+'</li>').one("click", function(){
+						listDeleteClick($(this), inList);
+						console.log(thisStudent.code);
+					}));
+				}
+			}
+		}
+					
+		var listitems = $('#deleteStudentList').children('li').get();
+		listitems.sort(function(a, b) {
+		   return $(a).text().toUpperCase().localeCompare($(b).text().toUpperCase());
+		})
+		$.each(listitems, function(idx, itm) { $('#deleteStudentList').append(itm); });
+		$('#deleteStudentList' ).listview('refresh');
+	});
+}
+function listDeleteClick(el, inList){
+	var origHtml = el.html();
+	el.html('').append($('<p><em>Are you sure you wish to delete this student?</em></p>')).append($('<input type="button" value="Yes" />').one("click", function(){
+		db.localQuery("requested=deleteStudent&studentCode="+inList[parseInt(el.attr("data-index"))], function(response){
+			$('#deleteStudent-popup').popup('close');
+			getStudentList();
+		});
+	}));
+	el.append($('<input type="button" value="No" />').one("click", function(){
+		getDeleteStudentList(); //I can't reset the html of this element from here for some reason, so this will have to do
+	}));
+	el.trigger('create');
 }

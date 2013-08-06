@@ -87,10 +87,9 @@ function createStudentView(response, type){
 					} 
 				}
 				
-				$('#buttons').append($('<input type="button" value="Start New Task" />').on("click", function(){  $.mobile.changePage('attempt.html'); }));
+				$('#buttons').append($('<input type="button" value="Start New Task" data-icon="plus" />').on("click", function(){  $.mobile.changePage('attempt.html'); }));
 				dualSort($('#studentTable').find('tbody tr'), function(el){ return $(el).children('.students').text(); }, $('#studentTable'));
 				$('#course-landing-content').trigger('create');
-				$('#studentTable').css("width", (window.innerWidth-100));
 			} else {
 				$('#studentTable').remove();
 				$('#buttons').append($('<h2>No students have been added to this course.</h2>'));
@@ -156,4 +155,22 @@ function getProperColor(isPassing){
 
 function manageStudentsCourse(){
 	$('#studentManageLink').click();
+}
+
+function deleteCourse(){
+	$('#confirmDeleteLink').click();
+}
+
+function confirmedDelete(){
+	$.mobile.loading( "show", {
+		text: "Deleting...",
+		textVisible: true,
+		theme: "c",
+		html: ""
+	});
+	db.localQuery("requested=deleteCourse&id="+courseToLoad, function(response){
+		listCourses(); 
+		$.mobile.changePage('index.html');
+		$.mobile.loading('hide'); 
+	});
 }

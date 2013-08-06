@@ -8,8 +8,10 @@
 		<div id="students" style="width: 100%; overflow: scroll;">
 		</div> 
 		<div id="buttons">
-			<input type="button" value="Manage Students" onclick="manageStudentsCourse()" />
-			<a href="studentManage.html" data-rel="dialog" style="display: none;" id="studentManageLink"></a>
+			<input type="button" value="Manage Students" onclick="manageStudentsCourse()" data-icon="grid" />
+			<input type="button" value="Delete Course" onclick="deleteCourse()" data-icon="delete" />
+			<a href="studentManage.html" data-rel="dialog" style="display: none;" id="studentManageLink" ></a>
+			<a href="confirmDelete.html" data-rel="dialog"  id="confirmDeleteLink" style="display: none;"></a>
 		</div>
 	</div>
 	<div data-role="footer" data-position="fixed">
