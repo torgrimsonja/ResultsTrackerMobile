@@ -103,8 +103,7 @@ reader.onloadend = function(evt) {
  */
  
 function detectDevice(){
-	if(isPhoneGap) return device.model + ' ' + device.platform + ' ' + device.version; //ex: 'iPhone5,1 iOS 5.1.1', 'NexusOne Android 4.2'
-	else return navigator.userAgent;
+	return navigator.userAgent;
 }
 
 /**
